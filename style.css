@@ -1,0 +1,126 @@
+html {
+    box-sizing: border-box;
+}
+
+a {
+    text-decoration: none;
+    color: blueviolet;
+}
+a:hover {
+    color: rgb(182, 103, 255);
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+#main-container {
+    max-width: 600px;
+    min-width: 370px;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    height: 100px;
+    background-color: blueviolet;
+    display: flex;
+    color: white;
+    font-size: 1.2em;
+}
+
+header .logo {
+    width: 80px;
+}
+
+header .logo img {
+    width: 100%;
+}
+
+header h1 {
+    margin-left: 10px;
+}
+
+header .user-info {
+    flex: 1;
+    padding-left: 10px;
+    display: flex;
+    align-items: center;
+}
+
+header .login {
+    width: 200px;
+
+}
+
+header .login ul {
+    list-style: none;
+}
+
+header .login ul li {
+    color: white;
+}
+
+header .login li:hover {
+    cursor: pointer;
+    color: rgb(175, 139, 209);
+}
+
+footer {
+    height: 50px;
+    background-color: blueviolet;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+}
+
+main {
+    min-height: 300px;
+    padding: 10px;
+    flex: 1;
+}
+
+main .content {
+    height: calc(100% - 30px);
+    background-color: white;
+    border: 5px solid blueviolet;
+    border-radius: 15px;
+    padding: 10px;
+    color: rgb(108, 6, 202);
+}
+
+main form {
+    width: 330px;
+    display: flex;
+    flex-direction: column;
+}
+
+main form label {
+    margin: 15px 0 5px 0;
+}
+
+main form input {
+    font-size: 1em;
+    border-radius: 3px;
+    border: 1px solid blueviolet;
+    width: 150px;
+}
+
+main form .input-error {
+    color: red;
+}
+
+main form input[type="submit"] {
+    margin-top: 15px;
+    width: 130px;
+    cursor: pointer;
+    background-color: white;
+    color: blueviolet;
+
+}
+
+main form input[type="submit"]:hover {
+    background-color: rgb(212, 204, 219);
+}
