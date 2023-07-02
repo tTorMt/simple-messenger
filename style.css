@@ -89,6 +89,81 @@ main .content {
     border-radius: 15px;
     padding: 10px;
     color: rgb(108, 6, 202);
+    position: relative;
+    overflow: auto;
+}
+
+main .content::-webkit-scrollbar {
+    display: none;
+}
+
+main .content .hello {
+    display: none;
+}
+
+main .content .chat {
+    padding: 10px;
+    position: relative;
+    bottom: 0;
+}
+
+main .content .chat .message {
+    border: 2px solid darkblue;
+    width: 70%;
+    padding: 5px;
+    color: black;
+    margin: 10px 0 10px 0;
+}
+
+main .content .chat .message h4 {
+    margin: 5px;
+    padding: 0;
+}
+
+main .content .chat .left {
+    border-radius: 0 15px 15px 15px;
+    background-color: lightblue;
+}
+
+main .content .chat .right {
+    border-radius: 15px 0 15px 15px;
+    background-color: lightgoldenrodyellow;
+    margin-left: auto;
+}
+
+main .content .send-message {
+    display: flex;
+    position: sticky;
+    bottom: 0;
+    height: 30px;
+}
+
+#user-message {
+    flex: 1;
+    border: 2px solid blue;
+    border-radius: 10px;
+    padding-left: 5px;
+    background-color: lightgoldenrodyellow;
+}
+
+#send {
+    width: 50px;
+    margin-left: 10px;
+    border: 2px solid blue;
+    background-color: lightblue;
+    border-radius: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: blue;
+    cursor: pointer;
+}
+
+#send:hover {
+    background-color: rgb(146, 146, 230);
+}
+
+#send:active {
+    background-color: blue;
 }
 
 main form {

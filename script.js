@@ -2,12 +2,19 @@
 function continerHeightResize() {
     window.addEventListener('load', resizeContainer);
     window.addEventListener('resize', resizeContainer);
-
     function resizeContainer() {
         let container = document.getElementById('main-container');
         if (window.innerHeight > 500)
             container.style.height =  window.innerHeight + "px";
+        chatDown();
     }
 }
 
+function chatDown() {
+    let chat = document.querySelector('.chat');
+    let content = document.querySelector('.content');
+    content.scrollTop = 9999;
+}
+
 continerHeightResize();
+
