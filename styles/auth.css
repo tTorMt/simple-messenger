@@ -1,0 +1,33 @@
+main form {
+    width: 330px;
+    display: flex;
+    flex-direction: column;
+}
+
+main form label {
+    margin: 15px 0 5px 0;
+}
+
+main form input {
+    font-size: 1em;
+    border-radius: 3px;
+    border: 1px solid blueviolet;
+    width: 150px;
+}
+
+main form .input-error {
+    color: red;
+}
+
+main form input[type="submit"] {
+    margin-top: 15px;
+    width: 130px;
+    cursor: pointer;
+    background-color: white;
+    color: blueviolet;
+
+}
+
+main form input[type="submit"]:hover {
+    background-color: rgb(212, 204, 219);
+}

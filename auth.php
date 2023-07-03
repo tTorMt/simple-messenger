@@ -1,5 +1,7 @@
 <?php
 header('Cache-Control: no-cache');
+include('includes/header.php');
+include('includes/footer.php');
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -8,19 +10,17 @@ header('Cache-Control: no-cache');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Простой чат</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles/base-style.css">
+    <link rel="stylesheet" href="styles/auth.css">
     <link rel="icon" href="images/favicon.png">
     <script src="script.js" defer></script>
 </head>
 
 <body>
     <div id="main-container">
-        <header>
-            <div class="logo">
-            <a href="/"><img src="images/logo.png" alt="logo"></a>
-            </div>
-            <h1>Simple Chat</h1>
-        </header>
+        <?php
+        (new HeaderProducer())->produce();
+        ?>
         <main>
             <div class="content">
                 <h1>Вход</h1>
@@ -34,9 +34,9 @@ header('Cache-Control: no-cache');
                 <p>Или <a href="registr.php">Зарегестрироваться</a></p>
             </div>
         </main>
-        <footer>
-            @ Автор приложения tTorMt. Мой email ***@***.com.
-        </footer>
+        <?php
+        (new FooterProducer())->produce();
+        ?>
     </div>
 </body>
 
