@@ -4,7 +4,7 @@ html {
 
 a {
     text-decoration: none;
-    color: blueviolet;
+    color: white;
 }
 a:hover {
     color: rgb(182, 103, 255);
@@ -51,7 +51,10 @@ header .user-info {
 
 header .login {
     width: 200px;
-
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    margin-right: 15px;
 }
 
 header .login ul {
@@ -93,7 +96,10 @@ main .content {
     overflow: auto;
 }
 
-main .content .hello {
-    display: none;
+main .content a {
+    color: blueviolet;
 }
 
+main .content a:hover {
+    color: rgb(158, 99, 212);
+}

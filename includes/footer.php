@@ -1,7 +1,8 @@
 <?php
+//Implement
 class FooterProducer
 {
-    public function produce()
+    public function show()
     {
 ?>
         <footer>

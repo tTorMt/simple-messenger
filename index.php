@@ -22,7 +22,7 @@ include('includes/footer.php');
 <body>
     <div id="main-container">
         <?php
-        (new HeaderProducer())->produce();
+        (new HeaderProducer(HeaderProducer::HEADER_MAIN))->show();
         ?>
         <main>
             <div class="content">
@@ -61,7 +61,7 @@ include('includes/footer.php');
             </div>
         </main>
         <?php
-        (new FooterProducer())->produce();
+        (new FooterProducer())->show();
         ?>
     </div>
 </body>
