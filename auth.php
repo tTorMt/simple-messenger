@@ -1,5 +1,7 @@
 <?php
+declare(strict_types=1);
 header('Cache-Control: no-cache');
+session_start();
 include('includes/header.php');
 include('includes/footer.php');
 ?>

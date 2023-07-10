@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 //To Do Produce header conditionaly to session
 class HeaderProducer
@@ -26,6 +25,7 @@ class HeaderProducer
                 if (is_null($this->userName)) {
                     echo "Произошла ошибка. Попробуйте позднее";
                     throw new RuntimeException('Username is null when HEADER_CHAT');
+                    exit;
                 }
             ?>
                 <div class="user-info">

@@ -1,8 +1,12 @@
 <?php
+declare(strict_types=1);
 header('Cache-Control: no-cache');
+session_start();
 //To Do exit
-if (isset($_GET['exit']))
+if (isset($_GET['exit'])) {
+    $_SESSION = array();
     header('Location: /');
+}
 include('includes/header.php');
 include('includes/footer.php');
 ?>
@@ -22,15 +26,28 @@ include('includes/footer.php');
 <body>
     <div id="main-container">
         <?php
-        (new HeaderProducer(HeaderProducer::HEADER_MAIN))->show();
+        if (isset($_SESSION['username'])) {
+            $chatState = HeaderProducer::HEADER_CHAT;
+            $userName = strip_tags($_SESSION['username']);
+        } else {
+            $chatState = HeaderProducer::HEADER_MAIN;
+        }
+        (new HeaderProducer($chatState, $userName ?? null))->show();
         ?>
         <main>
             <div class="content">
+                <?php
+                switch ($chatState) {
+                    case HeaderProducer::HEADER_MAIN :
+                ?>
                 <div class="hello">
                     <h1>Simple Chat</h1>
                     <p>Простое приложение для чата.
-                        Войдите или зарегестрируйтесь для начала использования</p>
+                        <a href="auth.php">Войдите</a> или <a href="registr.php">зарегестрируйтесь</a> для начала использования.</p>
                 </div>
+                <?php break; 
+                    case HeaderProducer::HEADER_CHAT :
+                ?>
                 <div class="chat">
                     <div class="message left">
                         <h4>Someone</h4>
@@ -40,7 +57,6 @@ include('includes/footer.php');
                         Lorem ipsum dolor sit amet,
                     </div>
                     <div class="message right">
-                        <h4>Me</h4>
                         Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                     </div>
                     <div class="message right">
@@ -58,6 +74,13 @@ include('includes/footer.php');
                     <input type="text" name="user-message" id="user-message" placeholder="Ваше сообщение">
                     <button id="send">-></button>
                 </div>
+                <?php break; 
+                default :
+                echo "Приложение не доступно. Попробуйте позже";
+                throw new RuntimeException('Illigal chat state');
+                exit;
+                }
+                ?>
             </div>
         </main>
         <?php
