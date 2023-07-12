@@ -1,3 +1,7 @@
+main .input-error {
+    color: red;
+}
+
 main form {
     width: 330px;
     display: flex;
@@ -13,10 +17,6 @@ main form input {
     border-radius: 3px;
     border: 1px solid blueviolet;
     width: 150px;
-}
-
-main form .input-error {
-    color: red;
 }
 
 main form input[type="submit"] {

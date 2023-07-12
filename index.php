@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
-header('Cache-Control: no-cache');
 session_start();
-//To Do exit
 if (isset($_GET['exit'])) {
     $_SESSION = array();
     header('Location: /');
@@ -26,9 +24,9 @@ include('includes/footer.php');
 <body>
     <div id="main-container">
         <?php
-        if (isset($_SESSION['username'])) {
+        if (isset($_SESSION['user'])) {
             $chatState = HeaderProducer::HEADER_CHAT;
-            $userName = strip_tags($_SESSION['username']);
+            $userName = strip_tags($_SESSION['user']);
         } else {
             $chatState = HeaderProducer::HEADER_MAIN;
         }

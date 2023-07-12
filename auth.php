@@ -1,7 +1,17 @@
 <?php
 declare(strict_types=1);
-header('Cache-Control: no-cache');
-session_start();
+if (isset($_POST['name']) && isset($_POST['pass'])) {
+    session_start();
+    include('includes/utils.php');
+    $name = inputUtils::nameTrim($_POST['name']);
+    //To Do implement database storage. Session storage now for testing.
+    if (isset($_SESSION[$name]) && password_verify($_POST['pass'], $_SESSION[$name])) {
+        $_SESSION['user'] = $name;
+        header('Location: /');
+    } else {
+        $loginError = "<p class=\"input-error\">Связка логин-пароль не верная. Повторите ввод.</p>";
+    }
+}
 include('includes/header.php');
 include('includes/footer.php');
 ?>
@@ -26,6 +36,11 @@ include('includes/footer.php');
         <main>
             <div class="content">
                 <h1>Вход</h1>
+                <?php 
+                if (isset($loginError)) {
+                    echo $loginError;
+                }
+                ?>
                 <form method="post" action="auth.php">
                     <label for="name">Логин: </label>
                     <input type="text" id="name" name="name">
