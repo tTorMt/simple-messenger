@@ -1,16 +1,15 @@
 <?php
+
 declare(strict_types=1);
 if (isset($_POST['name']) && isset($_POST['pass'])) {
     session_start();
-    include('includes/utils.php');
-    $name = inputUtils::nameTrim($_POST['name']);
+    require_once('includes/utils.php');
+    require_once('includes/authentificator.php');
+    require_once('includes/sessionstorage.php');
     //To Do implement database storage. Session storage now for testing.
-    if (isset($_SESSION[$name]) && password_verify($_POST['pass'], $_SESSION[$name])) {
-        $_SESSION['user'] = $name;
+    $authenticator = new Authenticator($_POST['name'], $_POST['pass'], new SessionStorage());
+    if ($authenticator->authUser())
         header('Location: /');
-    } else {
-        $loginError = "<p class=\"input-error\">Связка логин-пароль не верная. Повторите ввод.</p>";
-    }
 }
 include('includes/header.php');
 include('includes/footer.php');
@@ -25,7 +24,7 @@ include('includes/footer.php');
     <link rel="stylesheet" href="styles/base-style.css">
     <link rel="stylesheet" href="styles/auth.css">
     <link rel="icon" href="images/favicon.png">
-    <script src="script.js" defer></script>
+    <script src="scripts/script.js" defer></script>
 </head>
 
 <body>
@@ -36,10 +35,9 @@ include('includes/footer.php');
         <main>
             <div class="content">
                 <h1>Вход</h1>
-                <?php 
-                if (isset($loginError)) {
-                    echo $loginError;
-                }
+                <?php
+                if (isset($authenticator))
+                    $authenticator->showError();
                 ?>
                 <form method="post" action="auth.php">
                     <label for="name">Логин: </label>

@@ -5,8 +5,8 @@ if (isset($_GET['exit'])) {
     $_SESSION = array();
     header('Location: /');
 }
-include('includes/header.php');
-include('includes/footer.php');
+require_once('includes/header.php');
+require_once('includes/footer.php');
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -18,7 +18,7 @@ include('includes/footer.php');
     <link rel="stylesheet" href="styles/base-style.css">
     <link rel="stylesheet" href="styles/chat.css">
     <link rel="icon" href="images/favicon.png">
-    <script src="script.js" defer></script>
+    <script src="scripts/script.js" defer></script>
 </head>
 
 <body>

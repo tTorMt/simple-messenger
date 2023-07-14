@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+require_once('utils.php');
+require_once('storagehandler.php');
+
+class Authenticator {
+	private string $name;
+	private string $pass;
+	private string $errMsg;
+	private StorageHandler $storage;
+
+	public function __construct(string $name, string $pass, StorageHandler $storage) {
+		$this->name = inputUtils::nameTrim($name);
+		$this->pass = $pass;
+		$this->storage = $storage;
+	}
+
+	public function regUser(): bool {
+		if ($this->storage->isNameVacant($this->name)) {
+			if (inputUtils::nameCheck($this->name) && inputUtils::passCheck($this->pass)) {
+				$this->storage->storeUser($this->name, $this->pass);
+				return true;
+			} else {
+				$this->errMsg = "<p class=\"input-error\">Логин и/или пароль не соответствуют требованиям. Повторите ввод.</p>";
+				return false;
+			}
+		} else {
+			$this->errMsg = "<p class=\"input-error\">Такой логин занят. Повторите ввод.</p>";
+			return false;
+		}
+	}
+
+	public function authUser(): bool {
+		if ($this->storage->checkCredentials($this->name, $this->pass)) {
+			$_SESSION['user'] = $this->name;
+			return true;
+		} else {
+			$this->errMsg = "<p class=\"input-error\">Связка логин-пароль не верная. Повторите ввод.</p>";
+			return false;
+		}
+	}
+
+	public function showError() {
+		if ($this->errMsg)
+			echo $this->errMsg;
+	}
+}

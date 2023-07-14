@@ -2,21 +2,13 @@
 
 declare(strict_types=1);
 if (isset($_POST['name']) && isset($_POST['pass'])) {
-    include('includes/utils.php');
-    $name = inputUtils::nameTrim($_POST['name']);
-    $pass = $_POST['pass'];
     session_start();
+    require_once('includes/authentificator.php');
+    require_once('includes/sessionstorage.php');
     //To Do implement database storage. Session storage now for testing.
-    if (!isset($_SESSION[$name])) {
-        if (inputUtils::nameCheck($name) && inputUtils::passCheck($pass)) {
-            $_SESSION[$name] =  password_hash($pass, PASSWORD_DEFAULT);
-            header('Location: auth.php');
-        } else {
-            $regErr = "<p class=\"input-error\">Логин и/или пароль не соответствуют требованиям. Повторите ввод.</p>";
-        }
-    } else {
-        $regErr = "<p class=\"input-error\">Такой логин занят. Повторите ввод.</p>";
-    }
+    $authenticator = new Authenticator($_POST['name'], $_POST['pass'], new SessionStorage());
+    if ($authenticator->regUser())
+        header('Location: auth.php');
 }
 include('includes/header.php');
 include('includes/footer.php');
@@ -31,7 +23,7 @@ include('includes/footer.php');
     <link rel="stylesheet" href="styles/base-style.css">
     <link rel="stylesheet" href="styles/auth.css">
     <link rel="icon" href="images/favicon.png">
-    <script src="script.js" defer></script>
+    <script src="scripts/script.js" defer></script>
 </head>
 
 <body>
@@ -43,8 +35,8 @@ include('includes/footer.php');
             <div class="content">
                 <h1>Регистрация</h1>
                 <?php
-                if (isset($regErr))
-                    echo $regErr;
+                if (isset($authenticator))
+                    $authenticator->showError();
                 ?>
                 <form method="post" action="registr.php">
                     <label for="name">Логин: </label>
@@ -69,4 +61,5 @@ include('includes/footer.php');
         ?>
     </div>
 </body>
+
 </html>
