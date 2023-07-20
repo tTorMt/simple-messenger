@@ -22,11 +22,11 @@ class Authenticator {
 				$this->storage->storeUser($this->name, $this->pass);
 				return true;
 			} else {
-				$this->errMsg = "<p class=\"input-error\">Логин и/или пароль не соответствуют требованиям. Повторите ввод.</p>";
+				$this->errMsg = "<p class=\"input-error\" style=\"display: block;\">Логин и/или пароль не соответствуют требованиям. Повторите ввод.</p>";
 				return false;
 			}
 		} else {
-			$this->errMsg = "<p class=\"input-error\">Такой логин занят. Повторите ввод.</p>";
+			$this->errMsg = "<p class=\"input-error\" style=\"display: block;\">Такой логин занят. Повторите ввод.</p>";
 			return false;
 		}
 	}
@@ -36,7 +36,7 @@ class Authenticator {
 			$_SESSION['user'] = $this->name;
 			return true;
 		} else {
-			$this->errMsg = "<p class=\"input-error\">Связка логин-пароль не верная. Повторите ввод.</p>";
+			$this->errMsg = "<p class=\"input-error\" style=\"display: block;\">Связка логин-пароль не верная. Повторите ввод.</p>";
 			return false;
 		}
 	}
@@ -44,5 +44,10 @@ class Authenticator {
 	public function showError() {
 		if ($this->errMsg)
 			echo $this->errMsg;
+	}
+
+	public function nameVacantJSON(): string {
+		return $this->storage->isNameVacant($this->name) ? json_encode(['vacant' => 'true'])
+			: json_encode(['vacant' => 'false']);
 	}
 }

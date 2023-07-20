@@ -1,5 +1,6 @@
 main .input-error {
     color: red;
+    display: none;
 }
 
 main form {
@@ -25,9 +26,14 @@ main form input[type="submit"] {
     cursor: pointer;
     background-color: white;
     color: blueviolet;
-
 }
 
 main form input[type="submit"]:hover {
     background-color: rgb(212, 204, 219);
 }
+
+main form input[type="submit"]:disabled {
+    color: rgb(195, 160, 228);
+    background-color: grey;
+}
+
