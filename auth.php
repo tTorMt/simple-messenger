@@ -5,9 +5,9 @@ if (isset($_POST['name']) && isset($_POST['pass'])) {
     session_start();
     require_once('includes/utils.php');
     require_once('includes/authentificator.php');
-    require_once('includes/sessionstorage.php');
-    //To Do implement database storage. Session storage now for testing.
-    $authenticator = new Authenticator($_POST['name'], $_POST['pass'], new SessionStorage());
+    require_once('includes/dbstorage.php');
+    
+    $authenticator = new Authenticator($_POST['name'], $_POST['pass'], new DBStorage());
     if ($authenticator->authUser())
         header('Location: /');
 }

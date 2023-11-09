@@ -1,19 +1,20 @@
 <?php
 
 declare(strict_types=1);
+
 if ((isset($_POST['name']) && isset($_POST['pass'])) || isset($_GET['isVacant'])) {
     session_start();
     require_once('includes/authentificator.php');
-    require_once('includes/sessionstorage.php');
-    //To Do implement database storage. Session storage now for testing.
+    require_once('includes/dbstorage.php');
+    
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $authenticator = new Authenticator($_POST['name'], $_POST['pass'], new SessionStorage());
+        $authenticator = new Authenticator($_POST['name'], $_POST['pass'], new DBStorage());
         if ($authenticator->regUser()) {
             header('Location: auth.php');
             exit;
         }
     } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $authenticator = new Authenticator($_GET['isVacant'], '', new SessionStorage());
+        $authenticator = new Authenticator($_GET['isVacant'], '', new DBStorage());
         header('Content-Type: application/json');
         echo $authenticator->nameVacantJSON();
         exit;

@@ -20,13 +20,16 @@ class Authenticator {
 		if ($this->storage->isNameVacant($this->name)) {
 			if (inputUtils::nameCheck($this->name) && inputUtils::passCheck($this->pass)) {
 				$this->storage->storeUser($this->name, $this->pass);
+				$this->storage->closeStorage();
 				return true;
 			} else {
 				$this->errMsg = "<p class=\"input-error\" style=\"display: block;\">Логин и/или пароль не соответствуют требованиям. Повторите ввод.</p>";
+				$this->storage->closeStorage();
 				return false;
 			}
 		} else {
 			$this->errMsg = "<p class=\"input-error\" style=\"display: block;\">Такой логин занят. Повторите ввод.</p>";
+			$this->storage->closeStorage();
 			return false;
 		}
 	}
@@ -34,9 +37,11 @@ class Authenticator {
 	public function authUser(): bool {
 		if ($this->storage->checkCredentials($this->name, $this->pass)) {
 			$_SESSION['user'] = $this->name;
+			$this->storage->closeStorage();
 			return true;
 		} else {
 			$this->errMsg = "<p class=\"input-error\" style=\"display: block;\">Связка логин-пароль не верная. Повторите ввод.</p>";
+			$this->storage->closeStorage();
 			return false;
 		}
 	}

@@ -14,7 +14,7 @@ require_once('includes/footer.php');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Простой чат</title>
+    <title>Простой мессенджер</title>
     <link rel="stylesheet" href="styles/base-style.css">
     <link rel="stylesheet" href="styles/chat.css">
     <link rel="icon" href="images/favicon.png">
