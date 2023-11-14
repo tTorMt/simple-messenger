@@ -14,7 +14,8 @@ class DBStorage implements StorageHandler {
 
     public function isNameVacant(string $name): bool {
         $statement = $this->dataBase->prepare(
-            'SELECT user_id FROM user WHERE user_name = ?');
+            'SELECT user_id FROM user WHERE user_name = ?'
+        );
         $statement->bind_param('s', $name);
         $statement->execute();
         $result = $statement->get_result();
@@ -24,7 +25,8 @@ class DBStorage implements StorageHandler {
     public function storeUser(string $name, string $pass) {
         $passHash = password_hash($pass, PASSWORD_DEFAULT);
         $statement = $this->dataBase->prepare(
-            'INSERT INTO user(user_name, user_pass) VALUES (?, ?)');
+            'INSERT INTO user(user_name, user_pass) VALUES (?, ?)'
+        );
         $statement->bind_param('ss', $name, $passHash);
         $statement->execute();
         if ($statement->affected_rows != 1) {
@@ -34,7 +36,8 @@ class DBStorage implements StorageHandler {
 
     public function checkCredentials(string $name, string $pass): bool {
         $statement = $this->dataBase->prepare(
-                'SELECT user_name, user_pass FROM user WHERE user_name = ?');
+            'SELECT user_name, user_pass FROM user WHERE user_name = ?'
+        );
         $statement->bind_param('s', $name);
         $statement->execute();
         $result = $statement->get_result();
@@ -44,6 +47,20 @@ class DBStorage implements StorageHandler {
 
     public function closeStorage() {
         $this->dataBase->close();
+    }
+
+    public function searchUserNames(string $namePart):array {
+        $statement = $this->dataBase->prepare('
+            SELECT user_name FROM user WHERE user_name LIKE ?');
+        $namePart = '%'.$namePart.'%';
+        $statement->bind_param('s', $namePart);
+        $statement->execute();
+        $result = $statement->get_result()->fetch_all(MYSQLI_ASSOC);
+        $userNames = [];
+        foreach ($result as $row) {
+            $userNames[] = $row['user_name'];
+        }
+        return $userNames;
     }
 
     private function DBConnect() {

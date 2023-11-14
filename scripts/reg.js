@@ -51,7 +51,7 @@ function initializeAuthFields() {
         let login = loginField.value;
         let response = await fetch(`registr.php?isVacant=${login}`);
         if (!response.ok) {
-            console.error('Error is vacant check. No response from server');
+            console.error('Error is vacant check. Error response from server');
             return;
         }
         let result = (await response.json())['vacant'];

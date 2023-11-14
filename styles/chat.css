@@ -2,11 +2,39 @@ main .content::-webkit-scrollbar {
     display: none;
 }
 
+main .content .chat-block {
+    height: 100%;
+}
 
 main .content .chat {
     padding: 10px;
     position: relative;
     bottom: 0;
+    height: 100%;
+}
+
+main .content .conv-menu {
+    background-color: rgba(137, 45, 223, 0.3);
+    padding: 5px;
+    margin-bottom: 5px;
+    border: 2px solid blue;
+    border-radius: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+main .content .conv-menu button {
+    background-color: lightblue;
+    color: blue;
+    border: 2px solid blue;
+    font-size: 1.2em;
+    border-radius: 10px;
+}
+
+main .content .conv-menu button:hover {
+    background-color: rgb(146, 146, 230);
+    cursor: pointer;
 }
 
 main .content .chat .message {
@@ -33,14 +61,14 @@ main .content .chat .right {
     margin-left: auto;
 }
 
-main .content .send-message {
+main .content .send-message, main .content .contact-search {
     display: flex;
     position: sticky;
     bottom: 0;
     height: 30px;
 }
 
-#user-message {
+#user-message, #contact-search {
     flex: 1;
     border: 2px solid blue;
     border-radius: 10px;
@@ -48,7 +76,7 @@ main .content .send-message {
     background-color: lightgoldenrodyellow;
 }
 
-#send {
+#send, #search {
     width: 50px;
     margin-left: 10px;
     border: 2px solid blue;
@@ -60,10 +88,50 @@ main .content .send-message {
     cursor: pointer;
 }
 
-#send:hover {
+#send:hover, #search:hover {
     background-color: rgb(146, 146, 230);
 }
 
-#send:active {
+#send:active, #search:active {
+    background-color: blue;
+}
+
+main .content .user-search-block {
+    width: 70%;
+}
+
+main .content .user-search-block .user-node {
+    display: flex;
+    height: 30px;
+    margin: 10px 0;
+}
+
+main .content .user-search-block .user-node .user-name {
+    border: 2px solid darkblue;
+    color: black;
+    border-radius: 10px;
+    background-color: lightblue;
+    flex: 1;
+    line-height: 26px;
+    padding-left: 5px;
+}
+
+#user-choose {
+    border: 2px solid blue;
+    background-color: lightblue;
+    border-radius: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: blue;
+    cursor: pointer;
+    width: 50px;
+    margin-left: 10px;
+}
+
+#user-choose:hover {
+    background-color: rgb(146, 146, 230);
+}
+
+#user-choose:active {
     background-color: blue;
 }

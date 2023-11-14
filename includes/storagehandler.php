@@ -7,4 +7,5 @@ interface StorageHandler {
 	public function storeUser(string $name, string $pass);
 	public function checkCredentials(string $name, string $pass): bool;
 	public function closeStorage();
+	public function searchUserNames(string $namePart):array;
 }
