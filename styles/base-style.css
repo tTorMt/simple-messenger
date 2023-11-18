@@ -1,8 +1,5 @@
-.hidden {
-    display: none;
-}
 
-html {
+* {
     box-sizing: border-box;
 }
 
@@ -10,8 +7,13 @@ a {
     text-decoration: none;
     color: white;
 }
+
 a:hover {
     color: rgb(182, 103, 255);
+}
+
+html, body, #main-container {
+    height: 100%;
 }
 
 body {
@@ -31,7 +33,7 @@ header {
     background-color: blueviolet;
     display: flex;
     color: white;
-    font-size: 1.2em;
+    font-size: 1.1em;
 }
 
 header .logo {
@@ -90,14 +92,14 @@ main {
 }
 
 main .content {
-    height: calc(100% - 30px);
+    height: 100%;
     background-color: white;
     border: 5px solid blueviolet;
     border-radius: 15px;
     padding: 10px;
     color: rgb(108, 6, 202);
-    position: relative;
-    overflow: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 main .content a {

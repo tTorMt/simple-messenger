@@ -36,6 +36,7 @@ require_once('includes/footer.php');
 <body>
     <div id="main-container">
         <?php
+        //Check if user authorized
         if (isset($_SESSION['user'])) {
             $chatState = HeaderProducer::HEADER_CHAT;
             $userName = strip_tags($_SESSION['user']);
@@ -60,6 +61,7 @@ require_once('includes/footer.php');
                     case HeaderProducer::HEADER_CHAT:
                     ?>
                         <div class="conv-menu">
+                            <button id="open-conv">Открытый чат</button>
                             <button id="choose-user">Пользователь</button>
                             <button id="choose-conv">Чаты</button>
                             <button id="new-chat">Создать группу</button>

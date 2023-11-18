@@ -1,16 +1,14 @@
-main .content::-webkit-scrollbar {
-    display: none;
+.chat-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-main .content .chat-block {
-    height: 100%;
-}
-
-main .content .chat {
+.chat-block .chat {
     padding: 10px;
-    position: relative;
-    bottom: 0;
-    height: 100%;
+    flex: 1;
+    overflow: auto;
 }
 
 main .content .conv-menu {
@@ -19,9 +17,6 @@ main .content .conv-menu {
     margin-bottom: 5px;
     border: 2px solid blue;
     border-radius: 10px;
-    position: sticky;
-    top: 0;
-    z-index: 999;
 }
 
 main .content .conv-menu button {
@@ -63,8 +58,6 @@ main .content .chat .right {
 
 main .content .send-message, main .content .contact-search {
     display: flex;
-    position: sticky;
-    bottom: 0;
     height: 30px;
 }
 
@@ -96,8 +89,16 @@ main .content .send-message, main .content .contact-search {
     background-color: blue;
 }
 
-main .content .user-search-block {
+.user-search-block {
     width: 70%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+main .content .user-search-block .user-list {
+    flex: 1;
+    overflow: auto;
 }
 
 main .content .user-search-block .user-node {
@@ -116,7 +117,7 @@ main .content .user-search-block .user-node .user-name {
     padding-left: 5px;
 }
 
-#user-choose {
+.user-choose {
     border: 2px solid blue;
     background-color: lightblue;
     border-radius: 10px;
@@ -128,10 +129,14 @@ main .content .user-search-block .user-node .user-name {
     margin-left: 10px;
 }
 
-#user-choose:hover {
+.user-choose:hover {
     background-color: rgb(146, 146, 230);
 }
 
-#user-choose:active {
+.user-choose:active {
     background-color: blue;
+}
+
+.hidden {
+    display: none;
 }
