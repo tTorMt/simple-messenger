@@ -35,8 +35,9 @@ class Authenticator {
 	}
 
 	public function authUser(): bool {
-		if ($this->storage->checkCredentials($this->name, $this->pass)) {
-			$_SESSION['user'] = $this->name;
+		$userId = $this->storage->checkCredentials($this->name, $this->pass);
+		if ($userId !== false) {
+			$this->fillSession($userId);
 			$this->storage->closeStorage();
 			return true;
 		} else {
@@ -54,5 +55,11 @@ class Authenticator {
 	public function nameVacantJSON(): string {
 		return $this->storage->isNameVacant($this->name) ? json_encode(['vacant' => 'true'])
 			: json_encode(['vacant' => 'false']);
+	}
+
+	private function fillSession(int $userId) {
+		$_SESSION['user'] = $this->name;
+		$_SESSION['user_id'] = $userId;
+		$this->storage->storeSession(session_id(), $userId); 
 	}
 }

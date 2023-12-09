@@ -15,6 +15,8 @@ session_start();
 //Exit user session
 if (isset($_GET['exit'])) {
     $_SESSION = array();
+    require_once('includes/dbstorage.php');
+    (new DBStorage())->clearSession(session_id());
     header('Location: /');
 }
 require_once('includes/header.php');
@@ -36,7 +38,7 @@ require_once('includes/footer.php');
 <body>
     <div id="main-container">
         <?php
-        //Check if user authorized
+        //To Do check user session in database. Compare session with database
         if (isset($_SESSION['user'])) {
             $chatState = HeaderProducer::HEADER_CHAT;
             $userName = strip_tags($_SESSION['user']);
