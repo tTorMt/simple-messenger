@@ -1,22 +1,11 @@
 <?php
+
 declare(strict_types=1);
-//Search for userNames
-if (isset($_GET['namePart'])) {
-    require_once('includes/dbstorage.php');
-    require_once('includes/utils.php');
-    $namePart = inputUtils::nameTrim($_GET['namePart']);
-    if (inputUtils::nameCheck($namePart)) {
-        header('Content-type: application/json');
-        echo getUserListJson($namePart, new DBStorage());
-    } 
-    exit;
-}
-session_start();
-//Exit user session
-if (isset($_GET['exit'])) {
-    $_SESSION = array();
-    header('Location: /');
-}
+
+conversation();
+userSearch();
+exitSession();
+
 require_once('includes/header.php');
 require_once('includes/footer.php');
 ?>
@@ -36,7 +25,6 @@ require_once('includes/footer.php');
 <body>
     <div id="main-container">
         <?php
-        //Check if user authorized
         if (isset($_SESSION['user'])) {
             $chatState = HeaderProducer::HEADER_CHAT;
             $userName = strip_tags($_SESSION['user']);
@@ -124,8 +112,9 @@ require_once('includes/footer.php');
 </html>
 
 <?php
+
 require_once('includes/storagehandler.php');
-function getUserListJson(string $namePart, StorageHandler $storage):string {
+function getUserListJson(string $namePart, StorageHandler $storage): string {
     if (mb_strlen($namePart) > 3) {
         $result = $storage->searchUserNames($namePart);
         $storage->closeStorage();
@@ -133,4 +122,41 @@ function getUserListJson(string $namePart, StorageHandler $storage):string {
     }
     $storage->closeStorage();
     return '[]';
+}
+
+function conversation() {
+    if (isset($_GET['convUserId'])) {
+        session_start();
+        if (isset($_SESSION['userId'])) {
+            require_once('includes/dbstorage.php');
+            $storage = new DBStorage();
+            $convId = $storage->openConversation((int)$_SESSION['userId'], (int)$_GET['convUserId']);
+            $storage->storeConversationId(session_id(), $convId);
+            $storage->closeStorage();
+            exit;
+        }
+    }
+}
+
+function userSearch() {
+    if (isset($_GET['namePart'])) {
+        require_once('includes/dbstorage.php');
+        require_once('includes/utils.php');
+        $namePart = inputUtils::nameTrim($_GET['namePart']);
+        if (inputUtils::nameCheck($namePart)) {
+            header('Content-type: application/json');
+            echo getUserListJson($namePart, new DBStorage());
+        }
+        exit;
+    }
+}
+
+function exitSession() {
+    if (isset($_GET['exit'])) {
+        session_start();
+        $_SESSION = array();
+        require_once('includes/dbstorage.php');
+        (new DBStorage())->clearSession(session_id());
+        header('Location: /');
+    }
 }

@@ -68,7 +68,9 @@ function showUserSearchBlock() {
 
 function initUserSearch() {
   let searchField = document.getElementById("contact-search");
+  let userList = document.querySelector('.user-list');
   searchField.addEventListener("keyup", userSearch);
+  userList.addEventListener('click', initPrivateConversation);
 
   function clearUserList() {
     let userList = document.querySelector(".user-list");
@@ -82,19 +84,19 @@ function initUserSearch() {
   function fillUserList(listOfUsersFound) {
     clearUserList();
     let userList = document.querySelector(".user-list");
-    for (let i = 0; i < listOfUsersFound.length; i++) {
-      let userNode = createUserNode(listOfUsersFound[i]);
+    for (let userName in listOfUsersFound) {
+      let userNode = createUserNode(userName, listOfUsersFound[userName]);
       userList.appendChild(userNode);
     }
-
     changeNumFound();
 
-    function createUserNode(name) {
+    function createUserNode(name, userId) {
       let userNode = document.createElement("div");
       let userChooseBtn = document.createElement("button");
       let userName = document.createElement("div");
       let userNameText = document.createTextNode(name);
       let btnText = document.createTextNode("V");
+      userChooseBtn.setAttribute('id', 'user-' + userId);
       userNode.classList.add("user-node");
       userChooseBtn.classList.add("user-choose");
       userChooseBtn.appendChild(btnText);
@@ -127,6 +129,23 @@ function initUserSearch() {
     }
     let userNames = await response.json();
     fillUserList(userNames);
+  }
+
+  async function initPrivateConversation(event) {
+    if (event.target.classList.contains('user-choose')) {
+      let userId = event.target.getAttribute('id').split('-')[1];
+      let response = await fetch(`index.php?convUserId=${userId}`);
+      if (response.ok) {
+        let result = await response.text();
+        if (result != 'ok') {
+          console.error('Cannot start conversation with choosen user');
+          return;
+        }
+        console.log('Successfully started conversation');
+      } else {
+        console.error('Failed response from server');
+      }
+    }
   }
 }
 
