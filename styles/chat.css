@@ -11,6 +11,10 @@
     overflow: auto;
 }
 
+.chat-block .chat .date-time {
+    font-size: 0.6em;
+}
+
 main .content .conv-menu {
     background-color: rgba(137, 45, 223, 0.3);
     padding: 5px;

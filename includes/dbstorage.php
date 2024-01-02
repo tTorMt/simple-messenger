@@ -137,10 +137,11 @@ class DBStorage implements StorageHandler {
     }
 
     public function getMessages(int $convId): array {
-        $query = 'SELECT user_id, message, ms_date FROM message
+        $query = 'SELECT user_name, message, ms_date FROM message JOIN user USING(user_id)
             WHERE cs_id = ? ORDER BY ms_date';
         $stmt = $this->dataBase->prepare($query);
         $stmt->bind_param('i', $convId);
+        $stmt->execute();
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
@@ -151,6 +152,14 @@ class DBStorage implements StorageHandler {
         $stmt = $this->dataBase->prepare($query);
         $stmt->bind_param('is', $convId, $sqlDate);
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
+    public function storeMessage(string $message, int $userId, int $convId) {
+        $query = 'INSERT INTO message(user_id, cs_id, message, ms_date) 
+            VALUES (?, ?, ?, NOW())';
+        $stmt = $this->dataBase->prepare($query);
+        $stmt->bind_param('iis', $userId, $convId, $message);
+        $stmt->execute();
     }
 
     private function DBConnect() {

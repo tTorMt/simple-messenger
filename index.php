@@ -5,6 +5,8 @@ declare(strict_types=1);
 conversation();
 userSearch();
 exitSession();
+getMessagesJSON();
+sendMessage();
 
 require_once('includes/header.php');
 require_once('includes/footer.php');
@@ -25,6 +27,7 @@ require_once('includes/footer.php');
 <body>
     <div id="main-container">
         <?php
+        session_start();
         if (isset($_SESSION['user'])) {
             $chatState = HeaderProducer::HEADER_CHAT;
             $userName = strip_tags($_SESSION['user']);
@@ -56,26 +59,7 @@ require_once('includes/footer.php');
                         </div>
                         <div class="chat-block hidden">
                             <div class="chat">
-                                <div class="message left">
-                                    <h4>Someone</h4>
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                                </div>
-                                <div class="message left">
-                                    Lorem ipsum dolor sit amet,
-                                </div>
-                                <div class="message right">
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                                </div>
-                                <div class="message right">
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                                </div>
-                                <div class="message left">
-                                    <h4>Someone</h4>
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                                </div>
-                                <div class="message left">
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                                </div>
+
                             </div>
                             <div class="send-message">
                                 <input type="text" name="user-message" id="user-message" placeholder="Ваше сообщение">
@@ -131,8 +115,10 @@ function conversation() {
             require_once('includes/dbstorage.php');
             $storage = new DBStorage();
             $convId = $storage->openConversation((int)$_SESSION['userId'], (int)$_GET['convUserId']);
+            $_SESSION['convId'] = $convId;
             $storage->storeConversationId(session_id(), $convId);
             $storage->closeStorage();
+            echo 'ok';
             exit;
         }
     }
@@ -158,5 +144,37 @@ function exitSession() {
         require_once('includes/dbstorage.php');
         (new DBStorage())->clearSession(session_id());
         header('Location: /');
+    }
+}
+
+function getMessagesJSON() {
+    if (
+        isset($_GET['loadMessages']) && session_start() && isset($_SESSION['userId'])
+        && isset($_SESSION['convId'])
+    ) {
+        require_once('includes/dbstorage.php');
+        $storage = new DBStorage();
+        $messages = $storage->getMessages($_SESSION['convId']);
+        $userName = $_SESSION['user'];
+        foreach ($messages as &$message) {
+            if ($message['user_name'] === $userName)
+                $message['user_name'] = 'me';
+        }
+        header('Content-type: application/json');
+        echo json_encode($messages);
+        exit;
+    }
+}
+
+function sendMessage() {
+    if (
+        isset($_POST['message']) && session_start()
+        && isset($_SESSION['userId']) && isset($_SESSION['convId'])
+    ) {
+        require_once('includes/dbstorage.php');
+        $storage = new DBStorage();
+        $storage->storeMessage($_POST['message'], $_SESSION['userId'], $_SESSION['convId']);
+        echo 'ok';
+        exit;
     }
 }

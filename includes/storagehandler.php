@@ -15,6 +15,7 @@ interface StorageHandler {
 	public function getUserId(string $sessionId): int | bool;
 	public function getMessages(int $convId): array;
 	public function getMessagesFromDate(int $convId, DateTime $lastRefreshTime): array;
+	public function storeMessage(string $message, int $userId, int $convId);
 	//Get or create new conversation. Return conversation id
 	public function openConversation(int $firstUserId, int $secondUserId):int;
 }
