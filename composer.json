@@ -1,7 +1,30 @@
 {
+    "name": "ttormt/schat",
+    "description": "Simple messenger webapp",
+    "authors": [
+        {
+            "name": "Andrey Dyagolchenko aka tTorMt",
+            "email": "ttormt@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "swoole/ide-helper": "^5.1",
+        "ext-mysqli": "*"
+    },
     "autoload": {
         "psr-4": {
             "tTorMt\\SChat\\": "src/" 
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "tTorMt\\SChat\\Tests\\": "tests"
+        }
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.11",
+        "friendsofphp/php-cs-fixer": "^3.59",
+        "phpunit/phpunit": "^11"
     }
 }
