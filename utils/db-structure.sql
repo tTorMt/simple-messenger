@@ -1,5 +1,8 @@
 CREATE DATABASE  IF NOT EXISTS `schat` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `schat`;
+-- MySQL dump 10.13  Distrib 8.0.36, for Win64 (x86_64)
+--
+-- Host: 127.0.0.1    Database: schat
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -23,8 +26,9 @@ CREATE TABLE `chat` (
   `chat_id` int unsigned NOT NULL AUTO_INCREMENT,
   `chat_name` varchar(100) NOT NULL,
   `chat_type` tinyint NOT NULL,
-  PRIMARY KEY (`chat_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`chat_id`),
+  UNIQUE KEY `chat_name` (`chat_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -56,11 +60,14 @@ CREATE TABLE `message` (
   `chat_id` int unsigned NOT NULL,
   `message` varchar(1000) DEFAULT NULL,
   `message_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`,`chat_id`,`message_date`),
+  `message_id` int unsigned NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`message_id`),
   KEY `chat_id` (`chat_id`),
+  KEY `user_id` (`user_id`),
+  KEY `message_date_idx` (`message_date`),
   CONSTRAINT `message_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
   CONSTRAINT `message_ibfk_2` FOREIGN KEY (`chat_id`) REFERENCES `chat` (`chat_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -75,6 +82,7 @@ CREATE TABLE `session_data` (
   `cookie` varchar(256) DEFAULT NULL,
   `active_chat_id` int unsigned DEFAULT NULL,
   PRIMARY KEY (`user_id`),
+  UNIQUE KEY `cookie` (`cookie`),
   KEY `cookie_idx` (`cookie`),
   KEY `active_chat_id` (`active_chat_id`),
   CONSTRAINT `session_data_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
@@ -93,17 +101,10 @@ CREATE TABLE `user` (
   `user_id` int unsigned NOT NULL AUTO_INCREMENT,
   `user_name` varchar(30) NOT NULL,
   `password_hash` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `user_name` (`user_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping events for database 'schat'
---
-
---
--- Dumping routines for database 'schat'
---
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -114,4 +115,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-13 16:49:06
+-- Dump completed on 2024-07-17 14:32:54
