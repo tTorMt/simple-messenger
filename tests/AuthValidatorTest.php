@@ -6,7 +6,7 @@ namespace tTorMt\SChat\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use tTorMt\SChat\Session\AuthValidator;
+use tTorMt\SChat\Auth\AuthValidator;
 
 class AuthValidatorTest extends TestCase
 {

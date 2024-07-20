@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace tTorMt\SChat\Session;
+namespace tTorMt\SChat\Auth;
 
 /**
  * Verifies the username and password for compliance with rules.
