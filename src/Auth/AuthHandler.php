@@ -8,7 +8,7 @@ use mysqli_sql_exception;
 use tTorMt\SChat\Storage\DBHandler;
 
 /**
- * Authenticate user, create account or clear session
+ * Handles user authentication, account creation, and session management.
  */
 class AuthHandler
 {
@@ -22,11 +22,11 @@ class AuthHandler
     }
 
     /**
-     * Checks username and password, creates new user account
+     * Checks the username and password, and creates a new user account.
      *
      * @param string $userName
      * @param string $password
-     * @return true|int if failed returns error code NAME_ERROR, PASSWORD_ERROR, NAME_EXISTS
+     * @return true|int Returns true on success, or an error code (NAME_ERROR, PASSWORD_ERROR, NAME_EXISTS) on failure.
      */
     public function newUserAccount(string $userName, string $password): true|int
     {
@@ -49,7 +49,7 @@ class AuthHandler
     }
 
     /**
-     * Authenticate user. Start session before using it.
+     * Authenticates the user. Ensure the session is started before calling this method.
      *
      * @param string $userName
      * @param string $password
@@ -72,7 +72,7 @@ class AuthHandler
     }
 
     /**
-     * Delete user account
+     * Deletes the user account.
      *
      * @param int $userId
      * @return bool
@@ -84,7 +84,7 @@ class AuthHandler
     }
 
     /**
-     * Clears session data. Session must be started
+     * Clears the session data. Ensure the session is started before calling this method.
      *
      * @return bool
      */

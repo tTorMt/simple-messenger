@@ -12,18 +12,18 @@ class AuthValidator
     private const int NAME_MAX_LENGTH = 20;
     private const int NAME_MIN_LENGTH = 4;
     /**
-     * Username may contain only a-Z, numbers, '_' or "'" symbol
+     * The username may contain only letters (a-Z), numbers, underscores (_), or apostrophes (').
      */
     private const string NAME_PATTERN = '/^[a-zA-Z][a-zA-Z_\' 0-9]+$/';
     private const int PASS_MIN_LENGTH = 8;
     private const int PASS_MAX_LENGTH = 32;
     /**
-     * Password must contain a-Z, numbers, and special characters !@$%&_.
+     * The password must contain letters (a-Z), numbers, and special characters (!@$%&_).
      */
     private const array PASS_PATTERNS = ['/[a-z]+/', '/[A-Z]+/', '/[0-9]+/', '/[!_@$%&.]+/'];
 
     /**
-     * Checks the username meets requirements
+     * Checks if the username meets the requirements.
      *
      * @param string $name
      * @return bool
@@ -35,7 +35,7 @@ class AuthValidator
     }
 
     /**
-     * Checks if password meets security requirements
+     * Checks if the password meets the security requirements.
      *
      * @param string $pass
      * @return bool
@@ -53,6 +53,12 @@ class AuthValidator
         return false;
     }
 
+    /**
+     * Trims and normalizes spaces in the username.
+     *
+     * @param string $name
+     * @return string
+     */
     public static function nameTrim(string $name): string
     {
         $spacesPattern = '/\s+/';

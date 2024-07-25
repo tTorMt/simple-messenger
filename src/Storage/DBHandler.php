@@ -13,7 +13,7 @@ class DBHandler
      */
     private mysqli $dataBase;
     /**
-     * Queries array for methods
+     * Array of queries for methods
      */
     private const array QUERIES = [
         'writeNewUser' => 'INSERT INTO user (user_name, password_hash) VALUES (?, ?)',
@@ -27,8 +27,8 @@ class DBHandler
         'getChatList' => 'SELECT chat_name, chat_id, chat_type FROM chat JOIN chat_user USING(chat_id) WHERE user_id = ?',
         'setActiveChat' => 'UPDATE session_data SET active_chat_id = ? WHERE user_id = ?',
         'getActiveChat' => 'SELECT active_chat_id FROM session_data WHERE user_id = ?',
-        'getAllMessages' => 'SELECT * FROM message WHERE chat_id = ?',
-        'getLastMessages' => 'SELECT * FROM message WHERE chat_id = ? AND message_id > ?',
+        'getAllMessages' => 'SELECT user_name, chat_id, message, message_date, message_id FROM message JOIN user USING(user_id) WHERE chat_id = ?',
+        'getLastMessages' => 'SELECT user_name, chat_id, message, message_date, message_id FROM message JOIN user USING(user_id) WHERE chat_id = ? AND message_id > ?',
         'storeSession' => 'INSERT INTO session_data (user_id, cookie) VALUES (?, ?) ON DUPLICATE KEY UPDATE cookie = ?',
         'deleteSession' => 'DELETE FROM session_data WHERE user_id = ?',
         'getSessionData' => 'SELECT user_id, active_chat_id FROM session_data WHERE cookie = ?',
@@ -37,7 +37,7 @@ class DBHandler
     ];
 
     /**
-     * Construct method makes mysqli connection
+     * The constructor method establishes the MySQLi connection
      */
     public function __construct()
     {
@@ -49,7 +49,7 @@ class DBHandler
     }
 
     /**
-     * Closes connection
+     * Closes the database connection
      *
      * @return bool
      */
@@ -59,7 +59,7 @@ class DBHandler
     }
 
     /**
-     * Creates user account and saves it to database.
+     * Creates a user account and saves it to the database.
      *
      * @param string $userName
      * @param string $passwordHash
@@ -81,7 +81,7 @@ class DBHandler
     }
 
     /**
-     * Gets user data
+     * Retrieves user data
      *
      * @param string $userName
      * @return array|false ['user_id' => , 'user_name' => , 'password_hash' => ]
@@ -98,7 +98,7 @@ class DBHandler
     }
 
     /**
-     * Deletes user account
+     * Deletes a user account
      *
      * @param int $userId
      * @return bool
@@ -112,7 +112,7 @@ class DBHandler
     }
 
     /**
-     * Creates new chat
+     * Creates a new chat
      *
      * @param string $chatName
      * @param int $chatType
@@ -127,7 +127,7 @@ class DBHandler
     }
 
     /**
-     * Gets chat id
+     * Retrieves chat ID
      *
      * @param string $chatName
      * @return int|false
@@ -144,7 +144,7 @@ class DBHandler
     }
 
     /**
-     * Deletes chat
+     * Deletes a chat
      *
      * @param int $chatId
      * @return bool
@@ -158,7 +158,7 @@ class DBHandler
     }
 
     /**
-     * Adds user to existing chat
+     * Adds a user to an existing chat
      *
      * @param int $chatId
      * @param int $userId
@@ -173,7 +173,7 @@ class DBHandler
     }
 
     /**
-     * Deletes user from chat
+     * Removes a user from chat
      *
      * @param int $userId
      * @param int $chatId
@@ -188,7 +188,7 @@ class DBHandler
     }
 
     /**
-     * Gets user chat list
+     * Retrieves a user's chat list
      *
      * @param int $userId
      * @return array ['chat_name' =>, 'chat_id' =>, 'chat_type']
@@ -205,7 +205,7 @@ class DBHandler
     }
 
     /**
-     * Sets active chat to user session
+     * Sets the active chat for a user session
      *
      * @param int $activeChatId
      * @param int $userId
@@ -220,7 +220,7 @@ class DBHandler
     }
 
     /**
-     * Gets user active chat from session
+     * Retrieves the user's active chat from the session
      *
      * @param int $userId
      * @return int|false
@@ -237,10 +237,10 @@ class DBHandler
     }
 
     /**
-     * Gets all messages from chat
+     * Retrieves all messages from a chat
      *
      * @param int $chatId
-     * @return array ['user_id' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
+     * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
      */
     public function getAllMessages(int $chatId): array
     {
@@ -254,11 +254,11 @@ class DBHandler
     }
 
     /**
-     * Gets messages from id
+     * Retrieves messages from specific ID and newer
      *
      * @param int $chatId
      * @param int $lastMessageId
-     * @return array ['user_id' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
+     * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
      */
     public function getLastMessages(int $chatId, int $lastMessageId): array
     {
@@ -272,7 +272,7 @@ class DBHandler
     }
 
     /**
-     * Stores session to database
+     * Stores a session in the database
      *
      * @param int $userId
      * @param string $cookie
@@ -287,7 +287,7 @@ class DBHandler
     }
 
     /**
-     * Deletes session from database
+     * Removes a session from the database
      *
      * @param int $userId
      * @return bool
@@ -301,7 +301,7 @@ class DBHandler
     }
 
     /**
-     * Gets session data by cookie
+     * Retrieves a session data by cookie
      *
      * @param string $cookie
      * @return array|false ['user_id' =>, 'active_chat_id' => ]
@@ -318,7 +318,7 @@ class DBHandler
     }
 
     /**
-     * Stores message to database
+     * Stores a message in the database
      *
      * @param int $userId
      * @param int $chatId
@@ -334,7 +334,7 @@ class DBHandler
     }
 
     /**
-     * Deletes messages from chat by chat id
+     * Removes messages from chat table by chat ID
      *
      * @param int $chatId
      * @return bool
