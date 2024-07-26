@@ -152,7 +152,12 @@ class ChatUser
     {
         switch ($message[0]) {
             case 'message': {
-                $result = $this->storage->storeMessage($this->userId, $this->activeGID, $message[1]);
+                try {
+                    $result = $this->storage->storeMessage($this->userId, $this->activeGID, $message[1]);
+                } catch (\mysqli_sql_exception $exception) {
+                    // TODO implement error logging
+                    $result = false;
+                }
                 if (!$result) {
                     throw new MessageStoreException('Failed to send message to user FD '.$this->userFd);
                 }
