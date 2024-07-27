@@ -68,11 +68,9 @@ class Server
      * @param WsServer $ws
      * @param Request $request
      * @return void
-     * @throws UpdateStartException
      */
     public function onUserConnection(WsServer $ws, Request $request): void
     {
-        // TODO implement connection and error logging
         echo 'New connection FD: '.$request->fd.PHP_EOL;
         $userFd = $request->fd;
         $cookie = $request->cookie;
@@ -84,7 +82,11 @@ class Server
         }
         $userId = $userId['user_id'];
         $chatUser = new ChatUser($userFd, $userId, -1, -1, $this->ws, $this->dbHandler);
-        $chatUser->startUpdates();
+        try {
+            $chatUser->startUpdates();
+        } catch (UpdateStartException $exception) {
+            error_log('UpdateStartException on user: '.$userFd);
+        }
         $this->connections[$userFd] = $chatUser;
     }
 
@@ -96,7 +98,6 @@ class Server
      */
     public function onUserDisconnect(WsServer $ws, int $fd): void
     {
-        // TODO implement closing procedure
         echo "client-$fd is closed\n";
         $chatUser = $this->connections[$fd];
         $userId = $chatUser->getUserId();
@@ -120,16 +121,13 @@ class Server
             $chatUser->process($message);
         } catch (IncorrectCommandException $exception) {
             $ws->push($userFd, 'Incorrect command');
-            // TODO implement error logging
-            var_dump($exception);
+            error_log('IncorrectCommandException: '.json_encode($message).' userFd: '.$userFd);
         } catch (MessageStoreException $exception) {
             $ws->push($userFd, 'Message store error');
-            // TODO implement error logging
-            var_dump($exception);
+            error_log('MessageStoreException: '.json_encode($message).' userFd: '.$userFd);
         } catch (UpdateStartException $exception) {
             $ws->push($userFd, 'Update message start error');
-            // TODO implement error logging
-            var_dump($exception);
+            error_log('UpdateStartException: '.json_encode($message).' userFd: '.$userFd);
         }
     }
 
