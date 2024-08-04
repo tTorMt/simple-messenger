@@ -8,6 +8,7 @@ use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Frame;
+use tTorMt\SChat\Logger\DefaultLogger;
 use tTorMt\SChat\Storage\MySqlHandler;
 use tTorMt\SChat\Storage\MySqlHandlerGenerator;
 use tTorMt\SChat\WebSocket\Server;
@@ -38,6 +39,7 @@ class ServerTest extends TestCase
     public function testServerCreation(): void
     {
         self::$server = new Server(new MySqlHandlerGenerator());
+        self::$server->setLogger(new DefaultLogger());
         $this->assertNotNull(self::$server);
         $this->assertInstanceOf(Server::class, self::$server);
 

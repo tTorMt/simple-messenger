@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace tTorMt\SChat\Storage;
 
-use mysqli;
-
+/**
+ * Database handler interface
+ */
 interface DBHandler
 {
     /**

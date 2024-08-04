@@ -6,9 +6,12 @@ namespace tTorMt\SChat\Storage;
 
 use mysqli;
 
+/**
+ * MySql implementation of DBHandler interface
+ */
 class MySqlHandler implements DBHandler
 {
-    /*
+    /**
      * Mysqli connection object
      */
     private mysqli $dataBase;

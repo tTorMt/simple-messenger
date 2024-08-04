@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace tTorMt\SChat\WebSocket;
 
+use Psr\Log\LoggerInterface;
+use tTorMt\SChat\Logger\DefaultLogger;
 use tTorMt\SChat\Messenger\ChatUser;
 use tTorMt\SChat\Messenger\IncorrectCommandException;
 use tTorMt\SChat\Messenger\MessageStoreException;
@@ -22,6 +24,10 @@ class Server
      * @var WsServer
      */
     private WsServer $ws;
+    /**
+     * DBHandler object generator
+     * @var DBHandlerGenerator
+     */
     private DBHandlerGenerator $DBHandlerGenerator;
     /**
      * Database handler
@@ -33,6 +39,11 @@ class Server
      * @var array [ 'userFd' => ChatUser ]
      */
     private array $connections = [];
+    /**
+     * Psr-3 logger
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
 
     /**
      * Initializes a WebSocket server. Reads the config file.
@@ -40,6 +51,7 @@ class Server
     public function __construct(DBHandlerGenerator $DBHandlerGenerator)
     {
         $this->DBHandlerGenerator = $DBHandlerGenerator;
+        $this->logger = new DefaultLogger();
         $config = parse_ini_file(__DIR__ . '/../../config/config.ini');
         $ws = new WsServer($config['hosts_listen'], (int)$config['port_listen']);
 
@@ -74,7 +86,7 @@ class Server
      */
     public function onUserConnection(WsServer $ws, Request $request): void
     {
-        echo 'New connection FD: '.$request->fd.PHP_EOL;
+        $this->logger->info('New connection FD: '.$request->fd);
         $userFd = $request->fd;
         $cookie = $request->cookie;
         $userId = $this->dbHandler->getSessionData($cookie);
@@ -88,7 +100,7 @@ class Server
         try {
             $chatUser->startUpdates();
         } catch (UpdateStartException $exception) {
-            error_log('UpdateStartException on user: '.$userFd);
+            $this->logger->error('UpdateStartException on user: '.$userFd);
         }
         $this->connections[$userFd] = $chatUser;
     }
@@ -101,7 +113,7 @@ class Server
      */
     public function onUserDisconnect(WsServer $ws, int $fd): void
     {
-        echo "client-$fd is closed\n";
+        $this->logger->info("client-$fd is closed");
         $chatUser = $this->connections[$fd];
         $userId = $chatUser->getUserId();
         $this->dbHandler->deleteSession($userId);
@@ -124,14 +136,24 @@ class Server
             $chatUser->process($message);
         } catch (IncorrectCommandException $exception) {
             $ws->push($userFd, 'Incorrect command');
-            error_log('IncorrectCommandException: '.json_encode($message).' userFd: '.$userFd);
+            $this->logger->error('IncorrectCommandException: '.json_encode($message).' userFd: '.$userFd);
         } catch (MessageStoreException $exception) {
             $ws->push($userFd, 'Message store error');
-            error_log('MessageStoreException: '.json_encode($message).' userFd: '.$userFd);
+            $this->logger->error('MessageStoreException: '.json_encode($message).' userFd: '.$userFd);
         } catch (UpdateStartException $exception) {
             $ws->push($userFd, 'Update message start error');
-            error_log('UpdateStartException: '.json_encode($message).' userFd: '.$userFd);
+            $this->logger->error('UpdateStartException: '.json_encode($message).' userFd: '.$userFd);
         }
+    }
+
+    /**
+     * Sets logger object
+     * @param LoggerInterface $logger
+     * @return void
+     */
+    public function setLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 
     /**
