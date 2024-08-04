@@ -8,8 +8,8 @@ use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Frame;
-use tTorMt\SChat\Messenger\UpdateStartException;
-use tTorMt\SChat\Storage\DBHandler;
+use tTorMt\SChat\Storage\MySqlHandler;
+use tTorMt\SChat\Storage\MySqlHandlerGenerator;
 use tTorMt\SChat\WebSocket\Server;
 use Swoole\WebSocket\Server as WsServer;
 
@@ -24,27 +24,27 @@ class ServerTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        $database = new DBHandler();
+        $database = new MySqlHandler();
         self::$testUserId = $database->newUser(self::TEST_USER_NAME, 'pass');
         $database->storeSession(self::$testUserId, self::TEST_USER_COOKIE);
     }
 
     public static function tearDownAfterClass(): void
     {
-        $database = new DBHandler();
+        $database = new MySqlHandler();
         $database->deleteUser(self::$testUserId);
     }
 
     public function testServerCreation(): void
     {
-        self::$server = new Server();
+        self::$server = new Server(new MySqlHandlerGenerator());
         $this->assertNotNull(self::$server);
         $this->assertInstanceOf(Server::class, self::$server);
 
     }
 
     /**
-     * @throws Exception|UpdateStartException
+     * @throws Exception
      */
     public function testOnUserConnection(): void
     {

@@ -8,6 +8,7 @@ use tTorMt\SChat\Messenger\ChatUser;
 use tTorMt\SChat\Messenger\IncorrectCommandException;
 use tTorMt\SChat\Messenger\MessageStoreException;
 use tTorMt\SChat\Messenger\UpdateStartException;
+use tTorMt\SChat\Storage\DBHandlerGenerator;
 use Swoole\{WebSocket\Server as WsServer, Http\Request, WebSocket\Frame};
 use tTorMt\SChat\Storage\DBHandler;
 
@@ -21,6 +22,7 @@ class Server
      * @var WsServer
      */
     private WsServer $ws;
+    private DBHandlerGenerator $DBHandlerGenerator;
     /**
      * Database handler
      * @var DBHandler
@@ -35,8 +37,9 @@ class Server
     /**
      * Initializes a WebSocket server. Reads the config file.
      */
-    public function __construct()
+    public function __construct(DBHandlerGenerator $DBHandlerGenerator)
     {
+        $this->DBHandlerGenerator = $DBHandlerGenerator;
         $config = parse_ini_file(__DIR__ . '/../../config/config.ini');
         $ws = new WsServer($config['hosts_listen'], (int)$config['port_listen']);
 
@@ -59,7 +62,7 @@ class Server
      */
     public function onWorkerStart(WsServer $ws): void
     {
-        $this->dbHandler = new DBHandler();
+        $this->dbHandler = $this->DBHandlerGenerator->getDBHandler();
     }
 
     /**

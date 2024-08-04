@@ -6,8 +6,8 @@ namespace tTorMt\SChat;
 
 require __DIR__ . "/../vendor/autoload.php";
 
-use tTorMt\SChat\Storage\DBHandler;
+use tTorMt\SChat\Storage\MySqlHandlerGenerator;
 use tTorMt\SChat\WebSocket\Server;
 
-$ws = new Server();
+$ws = new Server(new MySqlHandlerGenerator());
 $ws->start();

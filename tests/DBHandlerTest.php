@@ -7,6 +7,7 @@ namespace tTorMt\SChat\Tests;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use tTorMt\SChat\Storage\DBHandler;
+use tTorMt\SChat\Storage\MySqlHandler;
 
 class DBHandlerTest extends TestCase
 {
@@ -20,7 +21,7 @@ class DBHandlerTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$handler = new DBHandler();
+        self::$handler = new MySqlHandler();
     }
 
     public static function tearDownAfterClass(): void
@@ -30,7 +31,7 @@ class DBHandlerTest extends TestCase
 
     public function testDBConnection(): void
     {
-        $handler = new DBHandler();
+        $handler = new MySqlHandler();
         $this->assertNotNull($handler);
         $this->assertTrue($handler->closeConnection());
     }

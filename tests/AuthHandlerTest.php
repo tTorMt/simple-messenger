@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace tTorMt\SChat\Tests;
 
-use mysqli_sql_exception;
-use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use tTorMt\SChat\Auth\AuthHandler;
-use tTorMt\SChat\Storage\DBHandler;
+use tTorMt\SChat\Storage\MySqlHandlerGenerator;
 
 class AuthHandlerTest extends TestCase
 {
@@ -21,7 +19,7 @@ class AuthHandlerTest extends TestCase
 
     public function testCreation(): void
     {
-        $handler = new AuthHandler(new DBHandler());
+        $handler = new AuthHandler((new MySqlHandlerGenerator())->getDBHandler());
         $this->assertNotNull($handler);
         self::$handler = $handler;
     }
