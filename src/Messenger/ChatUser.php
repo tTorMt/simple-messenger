@@ -56,13 +56,13 @@ class ChatUser
     /**
      * Initialize ChatUser
      * @param int $userFd
-     * @param $userId
+     * @param int $userId
      * @param int $activeGID
      * @param int $lastMID
      * @param Server $server
      * @param DBHandler $storage
      */
-    public function __construct(int $userFd, $userId, int $activeGID, int $lastMID, Server $server, DBHandler $storage)
+    public function __construct(int $userFd, int $userId, int $activeGID, int $lastMID, Server $server, DBHandler $storage)
     {
         $this->userId = $userId;
         $this->userFd = $userFd;
@@ -104,6 +104,7 @@ class ChatUser
     {
         if ($this->activeGID === -1 || $this->lastMID === -1) {
             $this->server->push($this->userFd, json_encode([]));
+            return;
         }
         $messages = $this->storage->getLastMessages($this->activeGID, $this->lastMID);
         $messages = json_encode($messages);
@@ -137,7 +138,10 @@ class ChatUser
     public function close(): void
     {
         $this->storage->deleteSession($this->userId);
-        Timer::clear($this->timerId);
+        if (isset($this->timerId)) {
+            Timer::clear($this->timerId);
+            unset($this->timerId);
+        }
     }
 
     /**
@@ -153,16 +157,22 @@ class ChatUser
         switch ($message[0]) {
             case 'message': {
                 try {
-                    $this->storage->storeMessage($this->userId, $this->activeGID, $message[1]);
+                    $isStored = $this->storage->storeMessage($this->userId, $this->activeGID, $message[1]);
+                    if (!$isStored) {
+                        throw new MessageStoreException('Failed to send message to user FD '.$this->userFd);
+                    }
                 } catch (\mysqli_sql_exception $exception) {
                     throw new MessageStoreException('Failed to send message to user FD '.$this->userFd, 0, $exception);
                 }
                 break;
             }
             case 'setGID': {
-                Timer::clear($this->timerId);
-                $this->setActiveGID((int)$message[1]['GID']);
-                $this->setLastMID((int)$message[1]['MID']);
+                if (isset($this->timerId)) {
+                    Timer::clear($this->timerId);
+                    unset($this->timerId);
+                }
+                $this->setActiveGID((int)$message[1][0]);
+                $this->setLastMID((int)$message[1][1]);
                 $this->startUpdates();
                 break;
             }

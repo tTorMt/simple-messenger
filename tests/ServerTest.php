@@ -6,9 +6,12 @@ namespace tTorMt\SChat\Tests;
 
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Frame;
 use tTorMt\SChat\Logger\DefaultLogger;
+use tTorMt\SChat\Messenger\ChatUser;
+use tTorMt\SChat\Storage\DBHandler;
 use tTorMt\SChat\Storage\MySqlHandler;
 use tTorMt\SChat\Storage\MySqlHandlerGenerator;
 use tTorMt\SChat\WebSocket\Server;
@@ -56,21 +59,19 @@ class ServerTest extends TestCase
         $request = $this->createMock(Request::class);
         $request->fd = -1;
         $request->cookie = '';
-        try {
-            self::$server->onWorkerStart($wsServer);
-            self::$server->onUserConnection($wsServer, $request);
-        } catch (Exception $e) {
-            $this->fail();
-        }
-        $this->assertTrue(true);
+        $serverReflect = new ReflectionClass(Server::class);
+
+        self::$server->onWorkerStart($wsServer);
+        $this->assertInstanceOf(DBHandler::class, $serverReflect->getProperty('dbHandler')->getValue(self::$server));
+
+        self::$server->onUserConnection($wsServer, $request);
+        $this->assertFalse(isset($serverReflect->getProperty('connections')->getValue(self::$server)[$request->fd]));
+
         $request->fd = 1;
         $request->cookie = self::TEST_USER_COOKIE;
-        try {
-            self::$server->onUserConnection($wsServer, $request);
-        } catch (Exception $e) {
-            $this->fail();
-        }
-        $this->assertTrue(true);
+        self::$server->onUserConnection($wsServer, $request);
+        $chatUser = $serverReflect->getProperty('connections')->getValue(self::$server)[$request->fd];
+        $this->assertInstanceOf(ChatUser::class, $chatUser);
     }
 
     /**
@@ -100,11 +101,10 @@ class ServerTest extends TestCase
     public function testOnDisconnect(): void
     {
         $wsServer = $this->createMock(WsServer::class);
-        try {
-            self::$server->onUserDisconnect($wsServer, 1);
-        } catch (Exception $e) {
-            $this->fail();
-        }
-        $this->assertTrue(true);
+        self::$server->onUserDisconnect($wsServer, 1);
+        $connections = (new ReflectionClass(Server::class))->getProperty('connections')->getValue(self::$server);
+        $database = new MySqlHandler();
+        $this->assertFalse($database->getSessionData(self::TEST_USER_COOKIE));
+        $this->assertFalse(isset($connections[1]));
     }
 }
