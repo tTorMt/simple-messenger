@@ -67,6 +67,12 @@ class DBHandlerTest extends TestCase
     }
 
     #[Depends('testAddUserToChat')]
+    public function testIsInChat(array $testData): void
+    {
+        $this->assertTrue(self::$handler->isInChat($testData['userId'], $testData['chatId']));
+    }
+
+    #[Depends('testAddUserToChat')]
     public function testSession(array $testData): array
     {
         $this->assertFalse(self::$handler->getSessionData(self::COOKIE));

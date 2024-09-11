@@ -161,7 +161,7 @@ class ChatUser
                     if (!$isStored) {
                         throw new MessageStoreException('Failed to send message to user FD '.$this->userFd);
                     }
-                } catch (\mysqli_sql_exception $exception) {
+                } catch (\Exception $exception) {
                     throw new MessageStoreException('Failed to send message to user FD '.$this->userFd, 0, $exception);
                 }
                 break;

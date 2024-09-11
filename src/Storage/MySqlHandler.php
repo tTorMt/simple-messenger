@@ -27,6 +27,7 @@ class MySqlHandler implements DBHandler
         'deleteChat' => 'DELETE FROM chat WHERE chat_id = ?',
         'addUserToChat' => 'INSERT INTO chat_user VALUES (?, ?)',
         'deleteUserFromChat' => 'DELETE FROM chat_user WHERE user_id = ? AND chat_id = ?',
+        'isInChat' => 'SELECT * FROM chat_user WHERE user_id = ? AND chat_id = ?',
         'getChatList' => 'SELECT chat_name, chat_id, chat_type FROM chat JOIN chat_user USING(chat_id) WHERE user_id = ?',
         'setActiveChat' => 'UPDATE session_data SET active_chat_id = ? WHERE user_id = ?',
         'getActiveChat' => 'SELECT active_chat_id FROM session_data WHERE user_id = ?',
@@ -348,5 +349,23 @@ class MySqlHandler implements DBHandler
         $statement->bind_param('i', $chatId);
         $statement->execute();
         return $statement->affected_rows > 0;
+    }
+
+    /**
+     * Checks if the user is in the chat
+     *
+     * @param int $userId
+     * @param int $chatId
+     * @return bool
+     */
+    public function isInChat(int $userId, int $chatId): bool
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['isInChat']);
+        $statement->bind_param('ii', $userId, $chatId);
+        $statement->execute();
+        $result = $statement->get_result();
+        $result = $result->fetch_assoc();
+        $statement->close();
+        return !empty($result);
     }
 }

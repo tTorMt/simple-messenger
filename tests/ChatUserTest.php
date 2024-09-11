@@ -7,6 +7,7 @@ namespace tTorMt\SChat\Tests;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ReflectionException;
 use Swoole\WebSocket\Server;
 use tTorMt\SChat\Messenger\ChatUser;
 use tTorMt\SChat\Messenger\IncorrectCommandException;
@@ -21,7 +22,7 @@ class ChatUserTest extends TestCase
      * @throws Exception
      * @throws UpdateStartException
      * @throws IncorrectCommandException
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function testChatUser(): void
     {

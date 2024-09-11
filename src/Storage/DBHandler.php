@@ -93,6 +93,14 @@ interface DBHandler
     public function chatList(int $userId): array;
 
     /**
+     * Checks if the user is in the chat
+     * @param int $userId
+     * @param int $chatId
+     * @return bool
+     */
+    public function isInChat(int $userId, int $chatId): bool;
+
+    /**
      * Sets the active chat for a user session
      *
      * @param int $activeChatId
