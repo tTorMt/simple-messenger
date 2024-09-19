@@ -108,4 +108,22 @@ class ChatManager
     {
         return $this->DBHandler->chatList($this->userId);
     }
+
+    /**
+     * Sets an active chat ID
+     *
+     * @param int $chatId
+     * @return void
+     * @throws NotInTheChatException
+     * @throws ChatStoreException
+     */
+    public function setActiveChat(int $chatId): void
+    {
+        if (!$this->DBHandler->isInChat($this->userId, $chatId)) {
+            throw new NotInTheChatException();
+        }
+        if (!$this->DBHandler->setActiveChat($chatId, $this->userId)) {
+            throw new ChatStoreException();
+        }
+    }
 }

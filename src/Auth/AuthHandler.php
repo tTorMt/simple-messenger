@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace tTorMt\SChat\Auth;
 
-use mysqli_sql_exception;
+use tTorMt\SChat\Messenger\NameExistsException;
 use tTorMt\SChat\Storage\DBHandler;
 
 /**
@@ -39,11 +39,8 @@ class AuthHandler
         }
         try {
             $this->storage->newUser($userName, password_hash($password, PASSWORD_DEFAULT));
-        } catch (mysqli_sql_exception $exception) {
-            if ($exception->getCode() === 1062) {
-                return self::NAME_EXISTS;
-            }
-            throw $exception;
+        } catch (NameExistsException $exception) {
+            return self::NAME_EXISTS;
         }
         return true;
     }

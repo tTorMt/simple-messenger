@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace tTorMt\SChat\Storage;
 
 use mysqli;
+use mysqli_sql_exception;
+use tTorMt\SChat\Messenger\NameExistsException;
 
 /**
  * MySql implementation of DBHandler interface
@@ -68,19 +70,27 @@ class MySqlHandler implements DBHandler
      * @param string $userName
      * @param string $passwordHash
      * @return int - new user id
+     * @throws NameExistsException
      */
     public function newUser(string $userName, string $passwordHash): int
     {
-        $statement = $this->dataBase->prepare(self::QUERIES['writeNewUser']);
-        $statement->bind_param('ss', $userName, $passwordHash);
-        $statement->execute();
-        $statement->close();
-        $statement = $this->dataBase->prepare(self::QUERIES['getUserData']);
-        $statement->bind_param('s', $userName);
-        $statement->execute();
-        $result = $statement->get_result();
-        $result = $result->fetch_assoc();
-        $statement->close();
+        try {
+            $statement = $this->dataBase->prepare(self::QUERIES['writeNewUser']);
+            $statement->bind_param('ss', $userName, $passwordHash);
+            $statement->execute();
+            $statement->close();
+            $statement = $this->dataBase->prepare(self::QUERIES['getUserData']);
+            $statement->bind_param('s', $userName);
+            $statement->execute();
+            $result = $statement->get_result();
+            $result = $result->fetch_assoc();
+            $statement->close();
+        } catch (mysqli_sql_exception $exception) {
+            if ($exception->getCode() === 1062) {
+                throw new NameExistsException();
+            }
+            throw $exception;
+        }
         return (int)$result['user_id'];
     }
 
