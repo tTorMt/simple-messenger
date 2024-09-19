@@ -32,9 +32,11 @@ class ChatManagerTest extends TestCase
         self::$storage = new MySqlHandler();
         self::$mainUserID = self::$storage->newUser(self::MAIN_USER_NAME, self::PASS_HASH);
         self::$secondUserID = self::$storage->newUser(self::SECOND_USER_NAME, self::PASS_HASH);
+        self::$storage->storeSession(self::$mainUserID, 'cookie');
     }
     public static function tearDownAfterClass(): void
     {
+        self::$storage->deleteSession(self::$mainUserID);
         self::$storage->deleteUserFromChat(self::$secondUserID, self::$chatID);
         self::$storage->deleteUserFromChat(self::$mainUserID, self::$chatID);
         self::$storage->deleteChat(self::$chatID);
@@ -136,6 +138,39 @@ class ChatManagerTest extends TestCase
     {
         $this->expectException(NotInTheChatException::class);
         $chatManager->addUser(-1, self::$secondUserID);
+    }
+
+    /**
+     * @throws NotInTheChatException
+     * @throws ChatStoreException
+     */
+    #[Depends('testCreateChat')]
+    public function testSetActiveChat(ChatManager $chatManager): void
+    {
+        $chatManager->setActiveChat(self::$chatID);
+        $chatId = self::$storage->getActiveChat(self::$mainUserID);
+        $this->assertSame($chatId, self::$chatID);
+    }
+
+    /**
+     * @throws ChatStoreException
+     */
+    #[Depends('testCreateChat')]
+    public function testNotInTheChatSACException(ChatManager $chatManager): void
+    {
+        $this->expectException(NotInTheChatException::class);
+        $chatManager->setActiveChat(-1);
+    }
+
+    /**
+     * @throws NotInTheChatException
+     */
+    #[Depends('testCreateChat')]
+    public function testChatStoreSACException(ChatManager $chatManager): void
+    {
+        self::$storage->deleteSession(self::$mainUserID);
+        $this->expectException(ChatStoreException::class);
+        $chatManager->setActiveChat(self::$chatID);
     }
 
     /**
