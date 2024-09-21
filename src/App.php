@@ -59,7 +59,6 @@ class App
     public function __call(string $name, array $arguments)
     {
         http_response_code(404);
-        return;
     }
 
     /**
@@ -67,7 +66,7 @@ class App
      *
      * @return void
      */
-    public function auth(): void
+    public function authPage(): void
     {
 
     }
@@ -77,7 +76,7 @@ class App
      *
      * @return void
      */
-    public function selectChat(): void
+    public function selectChatPage(): void
     {
 
     }
@@ -87,7 +86,7 @@ class App
      *
      * @return void
      */
-    public function chat(): void
+    public function chatPage(): void
     {
 
     }
@@ -97,11 +96,37 @@ class App
      *
      * @return void
      */
-    public function registration(): void
+    public function registrationPage(): void
     {
 
     }
 
+    /**
+     * API method to authorize user
+     *
+     * @return void
+     */
+    public function auth(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
+            isset($_POST['userName']) &&
+            isset($_POST['userPassword'])
+        ) {
+            $authHandler = new AuthHandler($this->DBHandler);
+            try {
+                if ($authHandler->authenticate($_POST['userName'], $_POST['userPassword'])) {
+                    http_response_code(200);
+                    return;
+                }
+                http_response_code(401);
+                return;
+            } catch (\Exception $exception) {
+                http_response_code(500);
+                return;
+            }
+        }
+        http_response_code(400);
+    }
     /**
      * API method to select an active chat
      *

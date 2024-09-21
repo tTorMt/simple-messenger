@@ -24,6 +24,11 @@ class AppTest extends TestCase
     private const string USER_NAME_ONE = 'TestNameOne';
     private const string USER_NAME_TWO = 'TestNameTwo';
 
+    public static function setUpBeforeClass(): void
+    {
+        session_id(self::COOKIE);
+    }
+
     public static function tearDownAfterClass(): void
     {
         self::$handler->deleteSession(self::$firstUserID);
@@ -89,6 +94,36 @@ class AppTest extends TestCase
         $app = new App($DBStub);
         $app->setLogger($this->createStub(LoggerInterface::class));
         $app->newUser();
+        $this->assertSame(500, http_response_code());
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Depends('testNewUser')]
+    public function testAuth(): void
+    {
+        $this->expectOutputString('');
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        self::$app->auth();
+        $this->assertSame(400, http_response_code());
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST['userName'] = self::USER_NAME_ONE;
+        $_POST['userPassword'] = self::USER_PASS.'wrong';
+        self::$app->auth();
+        $this->assertSame(401, http_response_code());
+
+        $_POST['userPassword'] = self::USER_PASS;
+        self::$app->auth();
+        $this->assertSame(200, http_response_code());
+
+        $dbStub = $this->createStub(DBHandler::class);
+        $dbStub->method('getUserData')->willThrowException(new \Exception());
+        $app = new App($dbStub);
+        $app->setLogger($this->createStub(LoggerInterface::class));
+        $app->auth();
         $this->assertSame(500, http_response_code());
     }
 
@@ -240,7 +275,7 @@ class AppTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST['chatId'] = 0;
         $_SESSION['userId'] = self::$firstUserID;
-        self::$handler->storeSession(self::$firstUserID, self::COOKIE);
+        //self::$handler->storeSession(self::$firstUserID, self::COOKIE);
         self::$app->activeChat();
         $sessionData = self::$handler->getSessionData(self::COOKIE);
         $this->assertSame($sessionData['active_chat_id'], self::$chatID);
