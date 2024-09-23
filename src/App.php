@@ -6,6 +6,7 @@ namespace tTorMt\SChat;
 
 use Psr\Log\LoggerInterface;
 use tTorMt\SChat\Auth\AuthHandler;
+use tTorMt\SChat\Auth\AuthValidator;
 use tTorMt\SChat\Logger\DefaultLogger;
 use tTorMt\SChat\Messenger\ChatManager;
 use tTorMt\SChat\Messenger\NameExistsException;
@@ -43,7 +44,7 @@ class App
     {
         $reqPath = substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), 1);
         if (empty($reqPath)) {
-            echo "<h1>Root</h1>\n";
+            require_once __DIR__.'/../templates/auth.php';
             return;
         }
         $this->$reqPath();
@@ -209,9 +210,15 @@ class App
             isset($_POST['chatName']) &&
             isset($_SESSION['userId'])
         ) {
+            if (!AuthValidator::nameCheck($_POST['chatName'])) {
+                http_response_code(400);
+                echo json_encode(['Error' => 'NameError']);
+                return;
+            };
             $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
             try {
                 $chatManager->createChat($_POST['chatName']);
+                return;
             } catch (NameExistsException $exception) {
                 http_response_code(400);
                 echo json_encode(['Error' => 'NameExists']);
