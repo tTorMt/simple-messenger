@@ -163,5 +163,3 @@ async function startUpdates(){
 async function getMessages(){
 
 }
-
-console.log('script loaded');

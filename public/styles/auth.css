@@ -1,0 +1,55 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    max-width: 1300px;
+    margin: auto;
+}
+
+html, body, #app {
+    height: 100%;
+}
+
+#app {
+    background-color: #e4e4e4;
+    border: 1px solid black;
+    display: grid;
+    grid-template-rows: 25px auto;
+}
+
+#app header {
+    background-color: white;
+    border: 1px solid grey;
+}
+
+#app main {
+    background-color: #f3f3f3;
+    width: 500px;
+    height: 500px;
+    margin: auto;
+    border: 1px solid black;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#error-field {
+    color: red;
+}
+
+#app main form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#app main form > * {
+    margin: 5px;
+}
+
+#rules {
+    width: 300px;
+}
+

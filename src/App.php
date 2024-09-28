@@ -44,6 +44,10 @@ class App
     {
         $reqPath = substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), 1);
         if (empty($reqPath)) {
+            if (isset($_SESSION['userId'])) {
+                require_once __DIR__.'/../templates/messenger.php';
+                return;
+            }
             require_once __DIR__.'/../templates/auth.php';
             return;
         }

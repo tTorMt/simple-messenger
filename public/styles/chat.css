@@ -1,0 +1,86 @@
+@media screen and (min-width: 600px) {
+    #app {
+        grid-template-columns: 300px auto;
+    }
+
+    #app header {
+        grid-column: span 2;
+    }
+
+    #back {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 599px) {
+    #app {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body, #app {
+    height: 100%;
+}
+
+body {
+    max-width: 1300px;
+    margin: auto;
+}
+
+#app {
+    background-color: #acacac;
+    border: 1px solid black;
+    display: grid;
+    grid-template-rows: 25px auto;
+}
+
+#app header {
+    background-color: white;
+    border: 1px solid grey;
+}
+
+#chat-list {
+    background-color: lightblue;
+    border: 1px solid blue;
+    overflow: auto;
+}
+
+.chat-node, #new-chat {
+    display: flex;
+    align-items: center;
+    margin: 5px;
+    height: 40px;
+    overflow: hidden;
+}
+
+.chat-node h3, #chatName {
+    flex: 1;
+}
+
+#messenger {
+    background-color: lightgreen;
+    border: 1px solid green;
+    display: flex;
+    flex-direction: column;
+}
+
+#message-list {
+    flex: 1;
+    margin: 5px;
+    overflow: auto;
+}
+
+#message-send, #add-user {
+    display: flex;
+    margin: 5px;
+}
+
+#message {
+    flex: 1;
+}
+
