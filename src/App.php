@@ -67,46 +67,6 @@ class App
     }
 
     /**
-     * Displays the login page
-     *
-     * @return void
-     */
-    public function authPage(): void
-    {
-
-    }
-
-    /**
-     * Displays the chat selection page
-     *
-     * @return void
-     */
-    public function selectChatPage(): void
-    {
-
-    }
-
-    /**
-     * Displays the chat page
-     *
-     * @return void
-     */
-    public function chatPage(): void
-    {
-
-    }
-
-    /**
-     * Displays the registration page
-     *
-     * @return void
-     */
-    public function registrationPage(): void
-    {
-
-    }
-
-    /**
      * API method to authorize user
      *
      * @return void

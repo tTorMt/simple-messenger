@@ -44,10 +44,31 @@ body {
     border: 1px solid grey;
 }
 
+#app header h4 {
+    margin: auto 5px;
+    display: grid;
+}
+
 #chat-list {
-    background-color: lightblue;
-    border: 1px solid blue;
+    background-color: #dddddd;
+    border: 1px solid black;
     overflow: auto;
+}
+
+#result-chat-field {
+    margin: 5px;
+}
+
+.error {
+    color: red;
+}
+
+.success {
+    color: green;
+}
+
+#reload-chats {
+    margin: 5px;
 }
 
 .chat-node, #new-chat {
@@ -63,10 +84,14 @@ body {
 }
 
 #messenger {
-    background-color: lightgreen;
-    border: 1px solid green;
+    background-color: #dfdfdf;
+    border: 1px solid black;
     display: flex;
     flex-direction: column;
+}
+
+#messenger h4 {
+    margin: 5px;
 }
 
 #message-list {
@@ -84,3 +109,6 @@ body {
     flex: 1;
 }
 
+#result-message-field {
+    margin: 5px;
+}

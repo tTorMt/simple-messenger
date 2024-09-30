@@ -25,7 +25,8 @@ html, body, #app {
 
 #app main {
     background-color: #f3f3f3;
-    width: 500px;
+    width: 100%;
+    max-width: 500px;
     height: 500px;
     margin: auto;
     border: 1px solid black;
