@@ -230,7 +230,7 @@ class MySqlHandler implements DBHandler
         $statement = $this->dataBase->prepare(self::QUERIES['setActiveChat']);
         $statement->bind_param('ii', $activeChatId, $userId);
         $statement->execute();
-        return $statement->affected_rows > 0;
+        return $activeChatId === $this->getActiveChat($userId);
     }
 
     /**

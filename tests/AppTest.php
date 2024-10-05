@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use tTorMt\SChat\App;
 use tTorMt\SChat\Logger\DefaultLogger;
+use tTorMt\SChat\Messenger\ChatStoreException;
 use tTorMt\SChat\Storage\DBHandler;
 use tTorMt\SChat\Storage\MySqlHandler;
 
@@ -51,7 +52,8 @@ class AppTest extends TestCase
     public function testRun(): void
     {
         $_SERVER['REQUEST_URI'] = '/';
-        $this->expectOutputString("<h1>Root</h1>\n");
+        $output = file_get_contents(__DIR__.'/../templates/auth.php');
+        $this->expectOutputString($output);
         self::$app->run();
     }
 
@@ -204,6 +206,18 @@ class AppTest extends TestCase
     }
 
     #[Depends('testNewChat')]
+    public function testNewChatNameError(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SESSION['userId'] = self::$firstUserID;
+        $_POST['chatName'] = '';
+        self::$app->newChat();
+        $this->assertSame(400, http_response_code());
+
+        $this->expectOutputString('{"Error":"NameError"}');
+    }
+
+    #[Depends('testNewChat')]
     public function testChatList(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -214,7 +228,7 @@ class AppTest extends TestCase
         $chatId = self::$handler->getChatId(self::CHAT_NAME.'TWO');
         $this->assertNotFalse($chatId);
 
-        $this->expectOutputString('[{"chat_name":"testChatName","chat_id":0,"chat_type":0},{"chat_name":"testChatNameTWO","chat_id":1,"chat_type":0}]');
+        $this->expectOutputString('[{"chat_name":"testChatName","chat_id":'.(self::$chatID).',"chat_type":0},{"chat_name":"testChatNameTWO","chat_id":'.($chatId).',"chat_type":0}]');
         self::$app->chatList();
         self::$handler->deleteUserFromChat(self::$firstUserID, $chatId);
         self::$handler->deleteChat($chatId);
@@ -240,32 +254,21 @@ class AppTest extends TestCase
         $this->assertSame(500, http_response_code());
     }
 
-    #[Depends('testChatList')]
+    #[Depends('testNewChat')]
     public function testActiveChatNotInTheChat(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST['chatId'] = 0;
+        $_POST['chatId'] = self::$chatID;
         $_SESSION['userId'] = self::$secondUserID;
         self::$app->activeChat();
         $this->expectOutputString('{"Error":"HostNotInTheChat"}');
         $this->assertSame(400, http_response_code());
     }
 
-    #[Depends('testChatList')]
-    public function testActiveChatDoesntExists(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST['chatId'] = 3;
-        $_SESSION['userId'] = self::$firstUserID;
-        self::$app->activeChat();
-        $this->expectOutputString('{"Error":"SuchChatDoesntExist"}');
-        $this->assertSame(400, http_response_code());
-    }
-
     /**
      * @throws Exception
      */
-    #[Depends('testChatList')]
+    #[Depends('testNewChat')]
     public function testActiveChat(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -273,9 +276,9 @@ class AppTest extends TestCase
         $this->assertSame(400, http_response_code());
 
         $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST['chatId'] = 0;
+        $_POST['chatId'] = self::$chatID;
         $_SESSION['userId'] = self::$firstUserID;
-        //self::$handler->storeSession(self::$firstUserID, self::COOKIE);
+
         self::$app->activeChat();
         $sessionData = self::$handler->getSessionData(self::COOKIE);
         $this->assertSame($sessionData['active_chat_id'], self::$chatID);
@@ -287,6 +290,19 @@ class AppTest extends TestCase
         $app = new App($dbMock);
         $app->setLogger($this->createStub(LoggerInterface::class));
         $app->activeChat();
+        $this->assertSame(500, http_response_code());
+    }
+
+    #[Depends('testNewChat')]
+    public function testSetActiveChatStoreException(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST['chatId'] = self::$chatID;
+        $_SESSION['userId'] = self::$firstUserID;
+
+        self::$handler->deleteSession(self::$firstUserID);
+        $this->expectOutputString('{"Error":"ChatStoreError"}');
+        self::$app->activeChat();
         $this->assertSame(500, http_response_code());
     }
 
@@ -314,18 +330,6 @@ class AppTest extends TestCase
         $this->assertSame(400, http_response_code());
     }
 
-    #[Depends('testChatList')]
-    public function testAddUserToChatChatDoesntExists(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SESSION['userId'] = self::$firstUserID;
-        $_POST['chatId'] = 3;
-        $_POST['userName'] = self::USER_NAME_TWO;
-        $this->expectOutputString('{"Error":"SuchChatDoesntExist"}');
-        self::$app->addUserToChat();
-        $this->assertSame(400, http_response_code());
-    }
-
     /**
      * @throws Exception
      */
@@ -340,7 +344,7 @@ class AppTest extends TestCase
 
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SESSION['userId'] = self::$firstUserID;
-        $_POST['chatId'] = 0;
+        $_POST['chatId'] = self::$chatID;
         $_POST['userName'] = self::USER_NAME_TWO;
         self::$app->addUserToChat();
         $result = self::$handler->isInChat(self::$secondUserID, self::$chatID);

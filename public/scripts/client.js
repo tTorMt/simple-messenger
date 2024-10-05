@@ -160,6 +160,24 @@ async function startUpdates(){
 
 }
 
-async function getMessages(){
 
+/**
+ * Loads all messages from the chosen chat
+ *
+ * @returns {Promise<any|{Error: string}>}
+ */
+async function getMessages(){
+    let response = await fetch('/loadMessages');
+    if (!response.ok) {
+        try {
+            return await response.json();
+        } catch (exception) {
+            switch (response.status) {
+                case 500 : return { Error: 'InternalServerError'};
+                case 400 : return { Error: 'WrongRequest'};
+                default : return { Error: 'Unknown error. Response code: ' + response.status };
+            }
+        }
+    }
+    return await response.json();
 }

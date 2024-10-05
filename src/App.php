@@ -9,6 +9,7 @@ use tTorMt\SChat\Auth\AuthHandler;
 use tTorMt\SChat\Auth\AuthValidator;
 use tTorMt\SChat\Logger\DefaultLogger;
 use tTorMt\SChat\Messenger\ChatManager;
+use tTorMt\SChat\Messenger\ChatStoreException;
 use tTorMt\SChat\Messenger\NameExistsException;
 use tTorMt\SChat\Messenger\NotInTheChatException;
 use tTorMt\SChat\Storage\DBHandler;
@@ -102,25 +103,22 @@ class App
         if (
             $_SERVER['REQUEST_METHOD'] === 'POST' &&
             isset($_POST['chatId']) &&
-            isset($_SESSION['userId']) &&
-            isset($_SESSION['chatList'])
+            isset($_SESSION['userId'])
         ) {
             $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
-            // Get the real chat ID from the session storage
-            $chatId = $_POST['chatId'];
-            if (!isset($_SESSION['chatList'][$chatId])) {
-                http_response_code(400);
-                echo json_encode(['Error' => 'SuchChatDoesntExist']);
-                return;
-            }
-            $chatId = $_SESSION['chatList'][$chatId]['chat_id'];
+            $chatId = (int)$_POST['chatId'];
             try {
                 $chatManager->setActiveChat($chatId);
+                $_SESSION['activeChatId'] = $chatId;
                 http_response_code(200);
                 return;
             } catch (NotInTheChatException $exception) {
                 http_response_code(400);
                 echo json_encode(['Error' => 'HostNotInTheChat']);
+                return;
+            } catch (ChatStoreException $exception) {
+                http_response_code(500);
+                echo json_encode(['Error' => 'ChatStoreError']);
                 return;
             } catch (\Exception $exception) {
                 $this->logger->error($exception->getMessage());
@@ -207,24 +205,17 @@ class App
             $_SERVER['REQUEST_METHOD'] === 'POST' &&
             isset($_POST['userName']) &&
             isset($_POST['chatId']) &&
-            isset($_SESSION['userId']) &&
-            isset($_SESSION['chatList'])
+            isset($_SESSION['userId'])
         ) {
             $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
             try {
-                $chatId = $_POST['chatId'];
+                $chatId = (int)$_POST['chatId'];
                 $userData = $this->DBHandler->getUserData($_POST['userName']);
                 if ($userData === false) {
                     http_response_code(400);
                     echo json_encode(['Error' => 'UserNotFound']);
                     return;
                 }
-                if (!isset($_SESSION['chatList'][$chatId])) {
-                    http_response_code(400);
-                    echo json_encode(['Error' => 'SuchChatDoesntExist']);
-                    return;
-                }
-                $chatId = $_SESSION['chatList'][$chatId]['chat_id'];
                 $chatManager->addUser($chatId, $userData['user_id']);
                 http_response_code(200);
                 return;
@@ -242,7 +233,7 @@ class App
     }
 
     /**
-     * API method to return the current user's chat list and save it to the $_SESSION['chatList']
+     * API method to return the current user's chat list
      *
      * @return void
      */
@@ -252,12 +243,6 @@ class App
             try {
                 $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
                 $chatList = $chatManager->getChatList();
-                // Hide database IDs. chat_id = index in array. Save the real IDs in session storage.
-                $_SESSION['chatList'] = $chatList;
-                $chatList = array_map(function ($index, $chat) {
-                    $chat['chat_id'] = $index;
-                    return $chat;
-                }, array_keys($chatList), $chatList);
                 echo json_encode($chatList);
             } catch (\Exception $exception) {
                 http_response_code(500);
@@ -267,5 +252,30 @@ class App
             return;
         }
         http_response_code(401);
+    }
+
+    /**
+     * API method to load all messages at the start of the chat
+     *
+     * @return void
+     */
+    public function loadMessages(): void
+    {
+        if (isset($_SESSION['userId']) && isset($_SESSION['activeChatId'])) {
+            try {
+                $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
+                $messages = $chatManager->loadMessages($_SESSION['activeChatId']);
+                echo json_encode($messages);
+            } catch (NotInTheChatException $exception) {
+                echo json_encode(['Error' => 'HostNotInTheChat']);
+                http_response_code(400);
+                return;
+            } catch (\Exception $exception) {
+                $this->logger->error($exception);
+                http_response_code(500);
+            }
+            return;
+        }
+        http_response_code(400);
     }
 }

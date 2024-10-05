@@ -126,4 +126,19 @@ class ChatManager
             throw new ChatStoreException();
         }
     }
+
+    /**
+     * Loads all messages from a chat
+     *
+     * @param int $activeChatId
+     * @return array
+     * @throws NotInTheChatException
+     */
+    public function loadMessages(int $activeChatId): array
+    {
+        if (!$this->DBHandler->isInChat($this->userId, $activeChatId)) {
+            throw new NotInTheChatException();
+        }
+        return $this->DBHandler->getAllMessages($activeChatId);
+    }
 }

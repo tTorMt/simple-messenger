@@ -27,6 +27,9 @@ class ChatManagerTest extends TestCase
     private const string PASS_HASH = 'test_user_password';
     private const string CHAT_NAME = 'test_chat';
 
+    /**
+     * @throws NameExistsException
+     */
     public static function setUpBeforeClass(): void
     {
         self::$storage = new MySqlHandler();
@@ -36,6 +39,7 @@ class ChatManagerTest extends TestCase
     }
     public static function tearDownAfterClass(): void
     {
+        self::$storage->deleteMessagesFromChat(self::$chatID);
         self::$storage->deleteSession(self::$mainUserID);
         self::$storage->deleteUserFromChat(self::$secondUserID, self::$chatID);
         self::$storage->deleteUserFromChat(self::$mainUserID, self::$chatID);
@@ -76,6 +80,14 @@ class ChatManagerTest extends TestCase
     {
         $this->expectException(NameExistsException::class);
         $chatManager->createChat(self::CHAT_NAME);
+    }
+
+    #[Depends('testCreateChat')]
+    public function testLoadMessagesNotInTheChat(): void
+    {
+        $this->expectException(NotInTheChatException::class);
+        $chatManager = new ChatManager(self::$secondUserID, self::$storage);
+        $chatManager->loadMessages(self::$chatID);
     }
 
     /**
@@ -119,7 +131,6 @@ class ChatManagerTest extends TestCase
         return $chatManager;
     }
 
-
     /**
      * @throws NotInTheChatException
      */
@@ -138,6 +149,27 @@ class ChatManagerTest extends TestCase
     {
         $this->expectException(NotInTheChatException::class);
         $chatManager->addUser(-1, self::$secondUserID);
+    }
+
+    /**
+     * @throws NotInTheChatException
+     */
+    #[Depends('testAddUser')]
+    public function testLoadMessages(ChatManager $chatManager): void
+    {
+        self::$storage->storeMessage(self::$mainUserID, self::$chatID, 'foo');
+        self::$storage->storeMessage(self::$secondUserID, self::$chatID, 'bar');
+        $messages = $chatManager->loadMessages(self::$chatID);
+        self::assertNotEmpty($messages);
+        self::assertSame(
+            [
+                $messages[0]['user_name'], $messages[0]['chat_id'], $messages[0]['message'],
+                $messages[1]['user_name'], $messages[1]['chat_id'], $messages[1]['message']],
+            [
+                self::MAIN_USER_NAME, self::$chatID, 'foo',
+                self::SECOND_USER_NAME, self::$chatID, 'bar'
+            ]
+        );
     }
 
     /**

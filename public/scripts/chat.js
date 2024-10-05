@@ -28,7 +28,7 @@ function setWindowMode() {
 function changeModeInit() {
     window.addEventListener('resize', setWindowMode);
     let backBtn = document.getElementById('back');
-    backBtn.addEventListener('click', event => {
+    backBtn.addEventListener('click', () => {
         toggleMessenger();
         showChatList();
     });
@@ -114,13 +114,21 @@ function chooseChatInit() {
     let chatListNode = document.getElementById('chat-list');
 
     chatListNode.addEventListener('click', event => {
+        toggleResultChatField();
         if (event.target.dataset === undefined || event.target.dataset.chatId === undefined) {
             return;
         }
         activeChatId = event.target.dataset.chatId;
-        toggleMessenger(event.target.dataset.chatName);
-        setWindowMode();
-        startMessageUpdates();
+        setActiveChat(activeChatId).then(result => {
+            if (result.Error === undefined) {
+                toggleMessenger(event.target.dataset.chatName);
+                loadMessages();
+                setWindowMode();
+                startMessageUpdates();
+                return;
+            }
+            toggleResultChatField('error', result.Error);
+        });
     });
 }
 
@@ -223,12 +231,36 @@ function toggleResultMessageField(result, message) {
  */
 function toggleMessenger(chatName) {
     let messengerNode = document.getElementById('messenger');
+    let messageList = document.getElementById('message-list');
+    if (messageList !== null) {
+        messageList.remove();
+    }
     if (chatName === undefined) {
         messengerNode.setAttribute('style', 'display: none');
         return;
     }
+    messageList = document.createElement('div');
+    messageList.id = 'message-list';
+    (document.getElementById('actions')).insertAdjacentElement('beforebegin', messageList);
     document.querySelector('#messenger h4').textContent = chatName;
     messengerNode.removeAttribute('style');
+}
+
+/**
+ * Fills the messages list then the chat starts
+ */
+function loadMessages() {
+    let messageList = document.getElementById('message-list');
+    getMessages().then(messages => {
+        if (messages.Error !== undefined) {
+            toggleResultMessageField(messages.Error);
+            return;
+        }
+        for (const message of messages) {
+            let messageNode = createMessageNode(message);
+            messageList.append(messageNode);
+        }
+    });
 }
 
 /**
@@ -236,4 +268,13 @@ function toggleMessenger(chatName) {
  */
 function startMessageUpdates() {
     // TO DO implement messaging
+}
+
+/**
+ * Creates a message node for the message list
+ */
+function createMessageNode(message) {
+    let messageNode = document.createElement('p');
+    messageNode.textContent = message.user_name + ' ' + message.message_date + ': ' + message.message;
+    return messageNode;
 }
