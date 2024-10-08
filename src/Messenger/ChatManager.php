@@ -12,6 +12,12 @@ use tTorMt\SChat\Storage\DBHandler;
 class ChatManager
 {
     /**
+     * A session ID of an active user
+     * @var string
+     */
+    private string $sessionId;
+
+    /**
      * The ID of active user
      * @var int
      */
@@ -25,12 +31,17 @@ class ChatManager
     /**
      * The constructor requires the ID of the active user
      *
-     * @param int $userId
+     * @param string $sessionId
      * @param DBHandler $DBHandler
+     * @throws SessionDataException
      */
-    public function __construct(int $userId, DBHandler $DBHandler)
+    public function __construct(string $sessionId, DBHandler $DBHandler)
     {
-        $this->userId = $userId;
+        $this->sessionId = $sessionId;
+        $this->userId = $DBHandler->getSessionData($sessionId)['user_id'];
+        if ($this->userId === false) {
+            throw new SessionDataException();
+        }
         $this->DBHandler = $DBHandler;
     }
 
@@ -74,14 +85,8 @@ class ChatManager
         if (!$this->DBHandler->isInChat($this->userId, $chatId)) {
             throw new NotInTheChatException();
         }
-        try {
-            if (!$this->DBHandler->addUserToChat($chatId, $userId)) {
-                throw new AddUserException();
-            }
-        } catch (AddUserException $e) {
-            throw $e;
-        } catch (\Exception $exception) {
-            throw new AddUserException($exception->getMessage(), $exception->getCode(), $exception);
+        if (!$this->DBHandler->addUserToChat($chatId, $userId)) {
+            throw new AddUserException();
         }
     }
 
@@ -106,7 +111,7 @@ class ChatManager
      */
     public function getChatList(): array
     {
-        return $this->DBHandler->chatList($this->userId);
+        return $this->DBHandler->chatList($this->sessionId);
     }
 
     /**
@@ -122,23 +127,18 @@ class ChatManager
         if (!$this->DBHandler->isInChat($this->userId, $chatId)) {
             throw new NotInTheChatException();
         }
-        if (!$this->DBHandler->setActiveChat($chatId, $this->userId)) {
+        if (!$this->DBHandler->setActiveChat($this->sessionId, $chatId)) {
             throw new ChatStoreException();
         }
     }
 
     /**
-     * Loads all messages from a chat
+     * Loads all messages from an active chat
      *
-     * @param int $activeChatId
      * @return array
-     * @throws NotInTheChatException
      */
-    public function loadMessages(int $activeChatId): array
+    public function loadMessages(): array
     {
-        if (!$this->DBHandler->isInChat($this->userId, $activeChatId)) {
-            throw new NotInTheChatException();
-        }
-        return $this->DBHandler->getAllMessages($activeChatId);
+        return $this->DBHandler->getAllMessages($this->sessionId);
     }
 }
