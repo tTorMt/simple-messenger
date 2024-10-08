@@ -6,6 +6,7 @@ namespace tTorMt\SChat\Tests;
 
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
+use tTorMt\SChat\Messenger\NameExistsException;
 use tTorMt\SChat\Storage\DBHandler;
 use tTorMt\SChat\Storage\MySqlHandler;
 
@@ -36,6 +37,9 @@ class DBHandlerTest extends TestCase
         $this->assertTrue($handler->closeConnection());
     }
 
+    /**
+     * @throws NameExistsException
+     */
     public function testUserStoring(): array
     {
         $userId = self::$handler->newUser(self::USER_NAME, self::PASSWORD_HASH);
@@ -47,6 +51,24 @@ class DBHandlerTest extends TestCase
     }
 
     #[Depends('testUserStoring')]
+    public function testNameExists(): void
+    {
+        $this->expectException(NameExistsException::class);
+        self::$handler->newUser(self::USER_NAME, self::PASSWORD_HASH);
+    }
+
+    #[Depends('testUserStoring')]
+    public function testSession(array $testData): array
+    {
+        $this->assertFalse(self::$handler->getSessionData(self::COOKIE));
+        $this->assertTrue(self::$handler->storeSession($testData['userId'], self::COOKIE));
+        $sessionData = self::$handler->getSessionData(self::COOKIE);
+        $this->assertNotEmpty($sessionData);
+        $this->assertSame($testData['userId'], $sessionData['user_id']);
+        return $testData;
+    }
+
+    #[Depends('testSession')]
     public function testChats(array $testData): array
     {
         $result = self::$handler->newChat(self::CHAT_NAME, 0);
@@ -61,7 +83,8 @@ class DBHandlerTest extends TestCase
     public function testAddUserToChat(array $testData): array
     {
         $this->assertTrue(self::$handler->addUserToChat($testData['chatId'], $testData['userId']));
-        $chatId = self::$handler->chatList($testData['userId'])[0]['chat_id'];
+        $chatList = self::$handler->chatList(self::COOKIE);
+        $chatId = $chatList[0]['chat_id'];
         $this->assertTrue($testData['chatId'] === $chatId);
         return $testData;
     }
@@ -73,29 +96,24 @@ class DBHandlerTest extends TestCase
     }
 
     #[Depends('testAddUserToChat')]
-    public function testSession(array $testData): array
+    public function testActiveChat(array $testData): array
     {
-        $this->assertFalse(self::$handler->getSessionData(self::COOKIE));
-        $this->assertTrue(self::$handler->storeSession($testData['userId'], self::COOKIE));
-        $sessionData = self::$handler->getSessionData(self::COOKIE);
-        $this->assertNotEmpty($sessionData);
-        $this->assertSame($testData['userId'], $sessionData['user_id']);
-        $this->assertTrue(self::$handler->setActiveChat($testData['chatId'], $testData['userId']));
-        $activeChatId = self::$handler->getActiveChat($testData['userId']);
+        $this->assertTrue(self::$handler->setActiveChat(self::COOKIE, $testData['chatId']));
+        $activeChatId = self::$handler->getActiveChat(self::COOKIE);
         $this->assertIsInt($activeChatId);
         $this->assertSame($testData['chatId'], $activeChatId);
         return $testData;
     }
 
-    #[Depends('testSession')]
+    #[Depends('testActiveChat')]
     public function testMessaging(array $testData): array
     {
-        $this->assertTrue(self::$handler->storeMessage($testData['userId'], $testData['chatId'], self::MESSAGE_ONE));
-        $this->assertTrue(self::$handler->storeMessage($testData['userId'], $testData['chatId'], self::MESSAGE_TWO));
-        $messages = self::$handler->getAllMessages($testData['chatId']);
+        $this->assertTrue(self::$handler->storeMessage(self::COOKIE, self::MESSAGE_ONE));
+        $this->assertTrue(self::$handler->storeMessage(self::COOKIE, self::MESSAGE_TWO));
+        $messages = self::$handler->getAllMessages(self::COOKIE);
         $this->assertNotEmpty($messages);
         $firstMessageId = $messages[0]['message_id'];
-        $messagesFromId = self::$handler->getLastMessages($testData['chatId'], $firstMessageId);
+        $messagesFromId = self::$handler->getLastMessages(self::COOKIE, $firstMessageId);
         $this->assertNotEmpty($messagesFromId);
         $this->assertSame($messages[1], $messagesFromId[0]);
         return $testData;

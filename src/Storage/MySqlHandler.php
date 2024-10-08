@@ -30,15 +30,15 @@ class MySqlHandler implements DBHandler
         'addUserToChat' => 'INSERT INTO chat_user VALUES (?, ?)',
         'deleteUserFromChat' => 'DELETE FROM chat_user WHERE user_id = ? AND chat_id = ?',
         'isInChat' => 'SELECT * FROM chat_user WHERE user_id = ? AND chat_id = ?',
-        'getChatList' => 'SELECT chat_name, chat_id, chat_type FROM chat JOIN chat_user USING(chat_id) WHERE user_id = ?',
-        'setActiveChat' => 'UPDATE session_data SET active_chat_id = ? WHERE user_id = ?',
-        'getActiveChat' => 'SELECT active_chat_id FROM session_data WHERE user_id = ?',
-        'getAllMessages' => 'SELECT user_name, chat_id, message, message_date, message_id FROM message JOIN user USING(user_id) WHERE chat_id = ?',
-        'getLastMessages' => 'SELECT user_name, chat_id, message, message_date, message_id FROM message JOIN user USING(user_id) WHERE chat_id = ? AND message_id > ?',
+        'getChatList' => 'SELECT chat_name, chat_id, chat_type FROM chat JOIN chat_user USING(chat_id) WHERE user_id = (SELECT user_id FROM session_data WHERE cookie = ?)',
+        'setActiveChat' => 'UPDATE session_data SET active_chat_id = ? WHERE cookie = ?',
+        'getActiveChat' => 'SELECT active_chat_id FROM session_data WHERE cookie = ?',
+        'getAllMessages' => 'SELECT user_name, chat_id, message, message_date, message_id FROM message JOIN user USING(user_id) WHERE chat_id = (SELECT active_chat_id FROM session_data WHERE cookie =?) ORDER BY message_id',
+        'getLastMessages' => 'SELECT user_name, chat_id, message, message_date, message_id FROM message JOIN user USING(user_id) WHERE chat_id = (SELECT active_chat_id FROM session_data WHERE cookie =?) AND message.message_id > ? ORDER BY message_id',
         'storeSession' => 'INSERT INTO session_data (user_id, cookie) VALUES (?, ?) ON DUPLICATE KEY UPDATE cookie = ?',
         'deleteSession' => 'DELETE FROM session_data WHERE user_id = ?',
         'getSessionData' => 'SELECT user_id, active_chat_id FROM session_data WHERE cookie = ?',
-        'storeMessage' => 'INSERT INTO message (user_id, chat_id, message) VALUES (?, ?, ?)',
+        'storeMessage' => 'INSERT INTO message (user_id, chat_id, message) SELECT user_id, active_chat_id, ? FROM session_data WHERE cookie = ?',
         'deleteMessagesFromChat' => 'DELETE FROM message WHERE chat_id = ?'
     ];
 
@@ -204,13 +204,13 @@ class MySqlHandler implements DBHandler
     /**
      * Retrieves a user's chat list
      *
-     * @param int $userId
+     * @param string $sessionId
      * @return array ['chat_name' =>, 'chat_id' =>, 'chat_type']
      */
-    public function chatList(int $userId): array
+    public function chatList(string $sessionId): array
     {
         $statement = $this->dataBase->prepare(self::QUERIES['getChatList']);
-        $statement->bind_param('i', $userId);
+        $statement->bind_param('s', $sessionId);
         $statement->execute();
         $result = $statement->get_result();
         $result = $result->fetch_all(MYSQLI_ASSOC);
@@ -221,28 +221,28 @@ class MySqlHandler implements DBHandler
     /**
      * Sets the active chat for a user session
      *
+     * @param string $sessionId
      * @param int $activeChatId
-     * @param int $userId
      * @return bool
      */
-    public function setActiveChat(int $activeChatId, int $userId): bool
+    public function setActiveChat(string $sessionId, int $activeChatId): bool
     {
         $statement = $this->dataBase->prepare(self::QUERIES['setActiveChat']);
-        $statement->bind_param('ii', $activeChatId, $userId);
+        $statement->bind_param('is', $activeChatId, $sessionId);
         $statement->execute();
-        return $activeChatId === $this->getActiveChat($userId);
+        return $activeChatId === $this->getActiveChat($sessionId);
     }
 
     /**
      * Retrieves the user's active chat from the session
      *
-     * @param int $userId
+     * @param string $sessionId
      * @return int|false
      */
-    public function getActiveChat(int $userId): int|false
+    public function getActiveChat(string $sessionId): int|false
     {
         $statement = $this->dataBase->prepare(self::QUERIES['getActiveChat']);
-        $statement->bind_param('i', $userId);
+        $statement->bind_param('s', $sessionId);
         $statement->execute();
         $result = $statement->get_result();
         $result = $result->fetch_assoc();
@@ -251,15 +251,15 @@ class MySqlHandler implements DBHandler
     }
 
     /**
-     * Retrieves all messages from a chat
+     * Retrieves all messages from the active chat (active chat id from the session)
      *
-     * @param int $chatId
+     * @param string $sessionId
      * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
      */
-    public function getAllMessages(int $chatId): array
+    public function getAllMessages(string $sessionId): array
     {
         $statement = $this->dataBase->prepare(self::QUERIES['getAllMessages']);
-        $statement->bind_param('i', $chatId);
+        $statement->bind_param('s', $sessionId);
         $statement->execute();
         $result = $statement->get_result();
         $result = $result->fetch_all(MYSQLI_ASSOC);
@@ -268,16 +268,16 @@ class MySqlHandler implements DBHandler
     }
 
     /**
-     * Retrieves messages from specific ID and newer
+     * Retrieves messages from specific ID and newer (using an active chat from session)
      *
-     * @param int $chatId
+     * @param string $sessionId
      * @param int $lastMessageId
      * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
      */
-    public function getLastMessages(int $chatId, int $lastMessageId): array
+    public function getLastMessages(string $sessionId, int $lastMessageId): array
     {
         $statement = $this->dataBase->prepare(self::QUERIES['getLastMessages']);
-        $statement->bind_param('ii', $chatId, $lastMessageId);
+        $statement->bind_param('si', $sessionId, $lastMessageId);
         $statement->execute();
         $result = $statement->get_result();
         $result = $result->fetch_all(MYSQLI_ASSOC);
@@ -317,13 +317,13 @@ class MySqlHandler implements DBHandler
     /**
      * Retrieves a session data by cookie
      *
-     * @param string $cookie
+     * @param string $sessionId
      * @return array|false ['user_id' =>, 'active_chat_id' => ]
      */
-    public function getSessionData(string $cookie): array|false
+    public function getSessionData(string $sessionId): array|false
     {
         $statement = $this->dataBase->prepare(self::QUERIES['getSessionData']);
-        $statement->bind_param('s', $cookie);
+        $statement->bind_param('s', $sessionId);
         $statement->execute();
         $result = $statement->get_result();
         $result = $result->fetch_assoc();
@@ -334,15 +334,14 @@ class MySqlHandler implements DBHandler
     /**
      * Stores a message in the database
      *
-     * @param int $userId
-     * @param int $chatId
+     * @param string $sessionId
      * @param string $message
      * @return bool
      */
-    public function storeMessage(int $userId, int $chatId, string $message): bool
+    public function storeMessage(string $sessionId, string $message): bool
     {
         $statement = $this->dataBase->prepare(self::QUERIES['storeMessage']);
-        $statement->bind_param('iis', $userId, $chatId, $message);
+        $statement->bind_param('ss', $message, $sessionId);
         $statement->execute();
         return $statement->affected_rows > 0;
     }

@@ -85,12 +85,12 @@ interface DBHandler
     public function deleteUserFromChat(int $userId, int $chatId): bool;
 
     /**
-     * Retrieves a user's chat list
+     * Retrieves the active user's chat list
      *
-     * @param int $userId
+     * @param string $sessionId
      * @return array ['chat_name' =>, 'chat_id' =>, 'chat_type']
      */
-    public function chatList(int $userId): array;
+    public function chatList(string $sessionId): array;
 
     /**
      * Checks if the user is in the chat
@@ -103,36 +103,36 @@ interface DBHandler
     /**
      * Sets the active chat for a user session
      *
+     * @param string $sessionId
      * @param int $activeChatId
-     * @param int $userId
      * @return bool
      */
-    public function setActiveChat(int $activeChatId, int $userId): bool;
+    public function setActiveChat(string $sessionId, int $activeChatId): bool;
 
     /**
      * Retrieves the user's active chat from the session
      *
-     * @param int $userId
+     * @param string $sessionId
      * @return int|false
      */
-    public function getActiveChat(int $userId): int|false;
+    public function getActiveChat(string $sessionId): int|false;
 
     /**
-     * Retrieves all messages from a chat
+     * Retrieves all messages from the active chat stored in the session
      *
-     * @param int $chatId
+     * @param string $sessionId
      * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
      */
-    public function getAllMessages(int $chatId): array;
+    public function getAllMessages(string $sessionId): array;
 
     /**
-     * Retrieves messages from specific ID and newer
+     * Retrieves messages from specific ID and newer from the active chat stored in the session
      *
-     * @param int $chatId
+     * @param string $sessionId
      * @param int $lastMessageId
      * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
      */
-    public function getLastMessages(int $chatId, int $lastMessageId): array;
+    public function getLastMessages(string $sessionId, int $lastMessageId): array;
 
     /**
      * Stores a session in the database
@@ -154,20 +154,19 @@ interface DBHandler
     /**
      * Retrieves a session data by cookie
      *
-     * @param string $cookie
+     * @param string $sessionId
      * @return array|false ['user_id' =>, 'active_chat_id' => ]
      */
-    public function getSessionData(string $cookie): array|false;
+    public function getSessionData(string $sessionId): array|false;
 
     /**
      * Stores a message in the database
      *
-     * @param int $userId
-     * @param int $chatId
+     * @param string $sessionId
      * @param string $message
      * @return bool
      */
-    public function storeMessage(int $userId, int $chatId, string $message): bool;
+    public function storeMessage(string $sessionId, string $message): bool;
 
     /**
      * Removes messages from chat table by chat ID
