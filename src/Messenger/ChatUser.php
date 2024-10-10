@@ -14,20 +14,15 @@ use tTorMt\SChat\Storage\DBHandler;
 class ChatUser
 {
     /**
-     * User ID from the database
-     * @var int
+     * Session ID of the user
+     * @var string
      */
-    private int $userId;
+    private string $sessionId;
     /**
      * User FD from the WebSocket server
      * @var int
      */
     private int $userFd;
-    /**
-     * Active group ID used for message sending and updating
-     * @var int
-     */
-    private int $activeGID;
     /**
      * Last updated message ID used for retrieving new messages from the database
      * @var int
@@ -56,29 +51,18 @@ class ChatUser
     /**
      * Initialize ChatUser
      * @param int $userFd
-     * @param int $userId
-     * @param int $activeGID
+     * @param string $sessionId
      * @param int $lastMID
      * @param Server $server
      * @param DBHandler $storage
      */
-    public function __construct(int $userFd, int $userId, int $activeGID, int $lastMID, Server $server, DBHandler $storage)
+    public function __construct(int $userFd, string $sessionId, int $lastMID, Server $server, DBHandler $storage)
     {
-        $this->userId = $userId;
+        $this->sessionId = $sessionId;
         $this->userFd = $userFd;
-        $this->activeGID = $activeGID;
         $this->lastMID = $lastMID;
         $this->server = $server;
         $this->storage = $storage;
-    }
-
-    /**
-     * Gets user ID from the database
-     * @return int
-     */
-    public function getUserId(): int
-    {
-        return $this->userId;
     }
 
     /**
@@ -97,16 +81,16 @@ class ChatUser
 
     /**
      * Checks for new messages and sends them to the user.
-     * If activeGID = -1 or lastMID = -1, send []
+     * If lastMID = -1, send []
      * @return void
      */
     private function update(): void
     {
-        if ($this->activeGID === -1 || $this->lastMID === -1) {
+        if ($this->lastMID === -1) {
             $this->server->push($this->userFd, json_encode([]));
             return;
         }
-        $messages = $this->storage->getLastMessages($this->activeGID, $this->lastMID);
+        $messages = $this->storage->getLastMessages($this->sessionId, $this->lastMID);
         $messages = json_encode($messages);
         $this->server->push($this->userFd, $messages);
     }
@@ -122,22 +106,11 @@ class ChatUser
     }
 
     /**
-     * Sets the active group ID for message handling
-     * @param int $activeGID
-     * @return void
-     */
-    public function setActiveGID(int $activeGID): void
-    {
-        $this->activeGID = $activeGID;
-    }
-
-    /**
      *  Closes the user connection and stops the timer update cycle
      * @return void
      */
     public function close(): void
     {
-        $this->storage->deleteSession($this->userId);
         if (isset($this->timerId)) {
             Timer::clear($this->timerId);
             unset($this->timerId);
@@ -151,13 +124,14 @@ class ChatUser
      * @throws UpdateStartException
      * @throws MessageStoreException
      * @throws IncorrectCommandException
+     * @throws SessionDataException
      */
     public function process(array $message): void
     {
         switch ($message[0]) {
             case 'message': {
                 try {
-                    $isStored = $this->storage->storeMessage($this->userId, $this->activeGID, $message[1]);
+                    $isStored = $this->storage->storeMessage($this->sessionId, $message[1]);
                     if (!$isStored) {
                         throw new MessageStoreException('Failed to send message to user FD '.$this->userFd);
                     }
@@ -171,7 +145,10 @@ class ChatUser
                     Timer::clear($this->timerId);
                     unset($this->timerId);
                 }
-                $this->setActiveGID((int)$message[1][0]);
+
+                if (!$this->storage->setActiveChat($this->sessionId, (int)$message[1][0])) {
+                    throw new SessionDataException();
+                };
                 $this->setLastMID((int)$message[1][1]);
                 $this->startUpdates();
                 break;
