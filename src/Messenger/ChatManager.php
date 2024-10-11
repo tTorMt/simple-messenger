@@ -38,10 +38,11 @@ class ChatManager
     public function __construct(string $sessionId, DBHandler $DBHandler)
     {
         $this->sessionId = $sessionId;
-        $this->userId = $DBHandler->getSessionData($sessionId)['user_id'];
-        if ($this->userId === false) {
+        $sessionData = $DBHandler->getSessionData($sessionId);
+        if ($sessionData === false) {
             throw new SessionDataException();
         }
+        $this->userId = $sessionData['user_id'];
         $this->DBHandler = $DBHandler;
     }
 

@@ -12,6 +12,7 @@ use tTorMt\SChat\Messenger\ChatManager;
 use tTorMt\SChat\Messenger\ChatStoreException;
 use tTorMt\SChat\Messenger\NameExistsException;
 use tTorMt\SChat\Messenger\NotInTheChatException;
+use tTorMt\SChat\Messenger\SessionDataException;
 use tTorMt\SChat\Storage\DBHandler;
 
 class App
@@ -93,6 +94,7 @@ class App
         }
         http_response_code(400);
     }
+
     /**
      * API method to select an active chat
      *
@@ -105,12 +107,15 @@ class App
             isset($_POST['chatId']) &&
             isset($_SESSION['userId'])
         ) {
-            $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
-            $chatId = (int)$_POST['chatId'];
             try {
+                $chatManager = new ChatManager(session_id(), $this->DBHandler);
+                $chatId = (int)$_POST['chatId'];
                 $chatManager->setActiveChat($chatId);
-                $_SESSION['activeChatId'] = $chatId;
                 http_response_code(200);
+                return;
+            } catch (SessionDataException $exception) {
+                http_response_code(401);
+                echo json_encode(['Error' => 'Unauthorized']);
                 return;
             } catch (NotInTheChatException $exception) {
                 http_response_code(400);
@@ -177,9 +182,13 @@ class App
                 echo json_encode(['Error' => 'NameError']);
                 return;
             };
-            $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
             try {
+                $chatManager = new ChatManager(session_id(), $this->DBHandler);
                 $chatManager->createChat($_POST['chatName']);
+                return;
+            } catch (SessionDataException $exception) {
+                http_response_code(401);
+                echo json_encode(['Error' => 'Unauthorized']);
                 return;
             } catch (NameExistsException $exception) {
                 http_response_code(400);
@@ -204,12 +213,14 @@ class App
         if (
             $_SERVER['REQUEST_METHOD'] === 'POST' &&
             isset($_POST['userName']) &&
-            isset($_POST['chatId']) &&
             isset($_SESSION['userId'])
         ) {
-            $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
             try {
-                $chatId = (int)$_POST['chatId'];
+                $chatManager = new ChatManager(session_id(), $this->DBHandler);
+                $chatId = $this->DBHandler->getActiveChat(session_id());
+                if ($chatId === false) {
+                    throw new NotInTheChatException();
+                }
                 $userData = $this->DBHandler->getUserData($_POST['userName']);
                 if ($userData === false) {
                     http_response_code(400);
@@ -218,6 +229,10 @@ class App
                 }
                 $chatManager->addUser($chatId, $userData['user_id']);
                 http_response_code(200);
+                return;
+            } catch (SessionDataException $exception) {
+                http_response_code(401);
+                echo json_encode(['Error' => 'Unauthorized']);
                 return;
             } catch (NotInTheChatException $exception) {
                 http_response_code(400);
@@ -241,9 +256,11 @@ class App
     {
         if (isset($_SESSION['userId'])) {
             try {
-                $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
+                $chatManager = new ChatManager(session_id(), $this->DBHandler);
                 $chatList = $chatManager->getChatList();
                 echo json_encode($chatList);
+            } catch (SessionDataException $exception) {
+                http_response_code(401);
             } catch (\Exception $exception) {
                 http_response_code(500);
                 $this->logger->error($exception);
@@ -261,14 +278,13 @@ class App
      */
     public function loadMessages(): void
     {
-        if (isset($_SESSION['userId']) && isset($_SESSION['activeChatId'])) {
+        if (isset($_SESSION['userId'])) {
             try {
-                $chatManager = new ChatManager($_SESSION['userId'], $this->DBHandler);
-                $messages = $chatManager->loadMessages($_SESSION['activeChatId']);
+                $chatManager = new ChatManager(session_id(), $this->DBHandler);
+                $messages = $chatManager->loadMessages();
                 echo json_encode($messages);
-            } catch (NotInTheChatException $exception) {
-                echo json_encode(['Error' => 'HostNotInTheChat']);
-                http_response_code(400);
+            } catch (SessionDataException $exception) {
+                http_response_code(401);
                 return;
             } catch (\Exception $exception) {
                 $this->logger->error($exception);

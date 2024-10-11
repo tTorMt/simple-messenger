@@ -8,7 +8,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use tTorMt\SChat\App;
 use tTorMt\SChat\Logger\DefaultLogger;
+use tTorMt\SChat\Messenger\ChatManager;
 use tTorMt\SChat\Messenger\ChatStoreException;
+use tTorMt\SChat\Messenger\SessionDataException;
 use tTorMt\SChat\Storage\DBHandler;
 use tTorMt\SChat\Storage\MySqlHandler;
 
@@ -32,6 +34,7 @@ class AppTest extends TestCase
 
     public static function tearDownAfterClass(): void
     {
+        self::$handler->deleteMessagesFromChat(self::$chatID);
         self::$handler->deleteSession(self::$firstUserID);
         self::$handler->deleteUserFromChat(self::$firstUserID, self::$chatID);
         self::$handler->deleteUserFromChat(self::$secondUserID, self::$chatID);
@@ -187,11 +190,27 @@ class AppTest extends TestCase
 
         $dbMock = $this->createStub(DBHandler::class);
         $dbMock->method('newChat')->willThrowException(new \Exception());
+        $dbMock->method('getSessionData')->willReturn(['user_id' => -1]);
         $app = new App($dbMock);
         $app->setLogger($this->createStub(LoggerInterface::class));
         $app->newChat();
         $this->assertSame(500, http_response_code());
     }
+
+    /**
+     * @throws Exception
+     */
+    public function testNewChatSessionException(): void
+    {
+        $this->expectOutputString('{"Error":"Unauthorized"}');
+        $dbMock = $this->createStub(DBHandler::class);
+        $dbMock->method('getSessionData')->willReturn(false);
+        $app = new App($dbMock);
+        $app->setLogger($this->createStub(LoggerInterface::class));
+        $app->newChat();
+        $this->assertSame(401, http_response_code());
+    }
+
 
     #[Depends('testNewChat')]
     public function testNewChatNameExists(): void
@@ -251,6 +270,10 @@ class AppTest extends TestCase
         $app = new App($dbMock);
         $app->setLogger($this->createStub(LoggerInterface::class));
         $app->chatList();
+        $this->assertSame(401, http_response_code());
+
+        $dbMock->method('getSessionData')->willReturn(['user_id' => -1]);
+        $app->chatList();
         $this->assertSame(500, http_response_code());
     }
 
@@ -258,8 +281,7 @@ class AppTest extends TestCase
     public function testActiveChatNotInTheChat(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST['chatId'] = self::$chatID;
-        $_SESSION['userId'] = self::$secondUserID;
+        $_POST['chatId'] = -1;
         self::$app->activeChat();
         $this->expectOutputString('{"Error":"HostNotInTheChat"}');
         $this->assertSame(400, http_response_code());
@@ -289,32 +311,45 @@ class AppTest extends TestCase
         $dbMock->method('isInChat')->willReturn(true);
         $app = new App($dbMock);
         $app->setLogger($this->createStub(LoggerInterface::class));
+        $this->expectOutputString('{"Error":"Unauthorized"}');
+        $app->activeChat();
+        $this->assertSame(401, http_response_code());
+
+        $dbMock->method('getSessionData')->willReturn(['user_id' => -1]);
         $app->activeChat();
         $this->assertSame(500, http_response_code());
     }
 
+    /**
+     * @throws Exception
+     */
     #[Depends('testNewChat')]
     public function testSetActiveChatStoreException(): void
     {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST['chatId'] = self::$chatID;
-        $_SESSION['userId'] = self::$firstUserID;
-
-        self::$handler->deleteSession(self::$firstUserID);
         $this->expectOutputString('{"Error":"ChatStoreError"}');
-        self::$app->activeChat();
+        $dbMock = $this->createStub(DBHandler::class);
+        $dbMock->method('setActiveChat')->willReturn(false);
+        $dbMock->method('isInChat')->willReturn(true);
+        $dbMock->method('getSessionData')->willReturn(['user_id' => -1]);
+        $app = new App($dbMock);
+        $app->setLogger($this->createStub(LoggerInterface::class));
+        $app->activeChat();
         $this->assertSame(500, http_response_code());
     }
 
+    /**
+     * @throws Exception
+     */
     #[Depends('testChatList')]
     public function testAddUserToChatHostNotInChat(): void
     {
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SESSION['userId'] = self::$secondUserID;
-        $_POST['chatId'] = 0;
-        $_POST['userName'] = self::USER_NAME_ONE;
         $this->expectOutputString('{"Error":"HostNotInTheChat"}');
-        self::$app->addUserToChat();
+        $dbMock = $this->createStub(DBHandler::class);
+        $dbMock->method('isInChat')->willReturn(false);
+        $dbMock->method('getSessionData')->willReturn(['user_id' => -1]);
+        $app = new App($dbMock);
+        $app->setLogger($this->createStub(LoggerInterface::class));
+        $app->addUserToChat();
         $this->assertSame(400, http_response_code());
     }
 
@@ -331,7 +366,6 @@ class AppTest extends TestCase
     }
 
     /**
-     * @throws Exception
      */
     #[Depends('testChatList')]
     public function testAddUserToChat(): void
@@ -350,12 +384,63 @@ class AppTest extends TestCase
         $result = self::$handler->isInChat(self::$secondUserID, self::$chatID);
         $this->assertTrue($result);
         $this->assertSame(200, http_response_code());
+    }
 
+    /**
+     * @throws Exception
+     */
+    #[Depends('testChatList')]
+    public function testAddUserToChatExceptions(): void
+    {
+        $this->expectOutputString('{"Error":"Unauthorized"}');
         $dbMock = $this->createStub(DBHandler::class);
-        $dbMock->method('getUserData')->willThrowException(new \Exception());
+        $dbMock->method('addUserToChat')->willThrowException(new \Exception());
+        $dbMock->method('getActiveChat')->willReturn(-1);
+        $dbMock->method('isInChat')->willReturn(true);
+        $dbMock->method('getUserData')->willReturn(['user_id' => -1]);
         $app = new App($dbMock);
         $app->setLogger($this->createStub(LoggerInterface::class));
         $app->addUserToChat();
+        $this->assertSame(401, http_response_code());
+        $dbMock->method('getSessionData')->willReturn(['user_id' => -1]);
+        $app->addUserToChat();
         $this->assertSame(500, http_response_code());
+    }
+
+    /**
+     * @throws SessionDataException
+     */
+    #[Depends('testActiveChat')]
+    public function testLoadMessages(): void
+    {
+        $_SESSION['userId'] = self::$firstUserID;
+        self::$handler->storeMessage(self::COOKIE, 'foo');
+        self::$handler->storeMessage(self::COOKIE, 'bar');
+        $chatManager = new ChatManager(self::COOKIE, self::$handler);
+        $messages = $chatManager->loadMessages();
+        $this->expectOutputString(json_encode($messages));
+        self::$app->loadMessages();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function testLoadMessagesExceptions(): void
+    {
+        $this->expectOutputString('');
+        $dbMock = $this->createStub(DBHandler::class);
+        $app = new App($dbMock);
+        $app->setLogger($this->createStub(LoggerInterface::class));
+        $app->loadMessages();
+        $this->assertSame(401, http_response_code());
+
+        $dbMock->method('getSessionData')->willReturn(['user_id' => -1]);
+        $dbMock->method('getAllMessages')->willThrowException(new \Exception());
+        $app->loadMessages();
+        $this->assertSame(500, http_response_code());
+
+        unset($_SESSION['userId']);
+        $app->loadMessages();
+        $this->assertSame(400, http_response_code());
     }
 }
