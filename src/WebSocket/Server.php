@@ -88,15 +88,14 @@ class Server
     {
         $this->logger->info('New connection FD: '.$request->fd);
         $userFd = $request->fd;
-        $cookie = $request->cookie;
-        $userId = $this->dbHandler->getSessionData($cookie);
+        $sessionId = ($request->cookie)["PHPSESSID"];
+        $userId = $this->dbHandler->getSessionData($sessionId);
         if ($userId === false) {
-            $ws->push($userFd, 'User session not found');
+            $ws->push($userFd, json_encode(['Error' => 'UserNotFound']));
             $ws->close($userFd);
             return;
         }
-        $userId = $userId['user_id'];
-        $chatUser = new ChatUser($userFd, $userId, -1, -1, $this->ws, $this->dbHandler);
+        $chatUser = new ChatUser($userFd, $sessionId, -1, $this->ws, $this->dbHandler);
         try {
             $chatUser->startUpdates();
         } catch (UpdateStartException $exception) {
@@ -115,8 +114,6 @@ class Server
     {
         $this->logger->info("client-$fd is closed");
         $chatUser = $this->connections[$fd];
-        $userId = $chatUser->getUserId();
-        $this->dbHandler->deleteSession($userId);
         $chatUser->close();
         unset($this->connections[$fd]);
     }
@@ -135,13 +132,13 @@ class Server
             $message = json_decode($frame->data);
             $chatUser->process($message);
         } catch (IncorrectCommandException $exception) {
-            $ws->push($userFd, 'Incorrect command');
+            $ws->push($userFd, json_encode(['Error' => 'IncorrectCommand']));
             $this->logger->error('IncorrectCommandException: '.json_encode($message).' userFd: '.$userFd);
         } catch (MessageStoreException $exception) {
-            $ws->push($userFd, 'Message store error');
+            $ws->push($userFd, json_encode(['Error' => 'MessageStoreError']));
             $this->logger->error('MessageStoreException: '.json_encode($message).' userFd: '.$userFd);
         } catch (UpdateStartException $exception) {
-            $ws->push($userFd, 'Update message start error');
+            $ws->push($userFd, json_encode(['Error' => 'UpdateStartError']));
             $this->logger->error('UpdateStartException: '.json_encode($message).' userFd: '.$userFd);
         }
     }
