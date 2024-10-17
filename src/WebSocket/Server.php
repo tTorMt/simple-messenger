@@ -131,6 +131,9 @@ class Server
             $chatUser = $this->connections[$userFd];
             $message = json_decode($frame->data);
             $chatUser->process($message);
+            if ($message[0] === 'message') {
+                $ws->push($userFd, json_encode(['OK' => 'MessageStored']));
+            }
         } catch (IncorrectCommandException $exception) {
             $ws->push($userFd, json_encode(['Error' => 'IncorrectCommand']));
             $this->logger->error('IncorrectCommandException: '.json_encode($message).' userFd: '.$userFd);

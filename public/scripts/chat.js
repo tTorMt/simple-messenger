@@ -123,10 +123,18 @@ function chooseChatInit() {
             setWindowMode();
             if (!webSocketServer) {
                 webSocketServer = connectToWS();
+                webSocketServer.onerror = () => {
+                    setMessagingActive(false);
+                    toggleResultMessageField('error', 'An error occurred. Try again later');
+                    webSocketServer = null;
+                }
                 webSocketServer.onopen = () => {
-                webSocketServer.send(JSON.stringify(['setMID', getLastMessageID()]));
+                    setMessagingActive(true);
+                    toggleResultMessageField();
+                    webSocketServer.send(JSON.stringify(['setMID', getLastMessageID()]));
                 }
             }
+            messageSendingInit(webSocketServer);
             startMessageUpdates(webSocketServer);
             return;
         }
@@ -289,12 +297,22 @@ function startMessageUpdates(webSocketServer) {
         if (messages.length === 0) {
             return;
         }
+        if (messages.Error !== undefined) {
+            toggleResultMessageField('error', 'An error occurred. Try again later');
+            if (messages.Error === 'MessageStoreError') {
+                setMessagingActive(true);
+            }
+            return;
+        }
+        if (messages.OK !== undefined) {
+            setMessagingActive(true);
+            return;
+        }
         if (messages[messages.length - 1].message_id <= lastMessageId) {
             webSocketServer.send(JSON.stringify(['setMID', lastMessageId]));
             return;
         }
         appendMessages(messages, lastMessageId);
-        console.log(messages[messages.length - 1].message_id);
         webSocketServer.send(JSON.stringify(['setMID', messages[messages.length - 1].message_id]));
     }
 }
@@ -324,4 +342,43 @@ function createMessageNode(message) {
     messageNode.setAttribute('data-message-id', message.message_id);
     messageNode.textContent = message.user_name + ' ' + message.message_date + ': ' + message.message;
     return messageNode;
+}
+
+/**
+ * Activates or deactivates the messaging field.
+ *
+ * @param activate bool
+ */
+function setMessagingActive(activate) {
+    let messageTextField = document.getElementById('message');
+    let sendBtn = document.getElementById('send');
+    if (activate) {
+        sendBtn.removeAttribute('disabled');
+        messageTextField.removeAttribute('disabled');
+        return;
+    }
+    sendBtn.setAttribute('disabled', '');
+    messageTextField.setAttribute('disabled', '');
+}
+
+/**
+ * Initialize the message sending
+ *
+ * @param webSocketServer
+ */
+function messageSendingInit(webSocketServer) {
+    let messageTextField = document.getElementById('message');
+    let sendBtn = document.getElementById('send');
+    let sendBtnReplacer = sendBtn.cloneNode(true);
+    sendBtn.parentNode.replaceChild(sendBtnReplacer, sendBtn);
+    
+    sendBtnReplacer.addEventListener('click', () => {
+        setMessagingActive(false);
+        let messageText = messageTextField.value;
+        if (!messageText) {
+            setMessagingActive(true);
+            return;
+        }
+        webSocketServer.send(JSON.stringify(['message', messageText]));
+    });
 }

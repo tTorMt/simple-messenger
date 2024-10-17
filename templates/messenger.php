@@ -49,8 +49,8 @@
                 <button id="add">Add</button>
             </div>
             <div id="message-send">
-                <textarea id="message" rows="1" placeholder="Type a message..."></textarea>
-                <button id="send">Send</button>
+                <textarea id="message" rows="1" placeholder="Type a message..." disabled></textarea>
+                <button id="send" disabled>Send</button>
             </div>
         </div>
     </main>
