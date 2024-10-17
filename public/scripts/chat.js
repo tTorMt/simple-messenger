@@ -1,5 +1,3 @@
-let activeChatId;
-
 createChatInit();
 chatListReloadInit();
 addUserToChatInit();
@@ -112,19 +110,27 @@ function chatListReload() {
  */
 function chooseChatInit() {
     let chatListNode = document.getElementById('chat-list');
+    let webSocketServer;
 
     chatListNode.addEventListener('click', event => {
         toggleResultChatField();
         if (event.target.dataset === undefined || event.target.dataset.chatId === undefined) {
             return;
         }
-        activeChatId = event.target.dataset.chatId;
+        let activeChatId = event.target.dataset.chatId;
         setActiveChat(activeChatId).then(result => {
             if (result.Error === undefined) {
                 toggleMessenger(event.target.dataset.chatName);
-                loadMessages();
-                setWindowMode();
-                startMessageUpdates();
+                loadMessages().then(() => {
+                    setWindowMode();
+                    if (!webSocketServer) {
+                        webSocketServer = connectToWS();
+                        webSocketServer.onopen = () => {
+                            webSocketServer.send(JSON.stringify(['setMID', getLastMessageID()]));
+                        }
+                    }
+                    startMessageUpdates(webSocketServer);
+                });
                 return;
             }
             toggleResultChatField('error', result.Error);
@@ -188,7 +194,7 @@ function addUserToChatInit() {
         toggleResultMessageField();
         addBtn.setAttribute('disabled', '');
         let userName = userNameField.value;
-        addUserToChat(userName, activeChatId).then(result => {
+        addUserToChat(userName).then(result => {
             if (result.Error !== undefined) {
                 toggleResultMessageField('error', result.Error);
             } else {
@@ -251,7 +257,7 @@ function toggleMessenger(chatName) {
  */
 function loadMessages() {
     let messageList = document.getElementById('message-list');
-    getMessages().then(messages => {
+    return getMessages().then(messages => {
         if (messages.Error !== undefined) {
             toggleResultMessageField(messages.Error);
             return;
@@ -264,10 +270,56 @@ function loadMessages() {
 }
 
 /**
+ * Gets last showed message ID
+ * @returns {number}
+ */
+function getLastMessageID() {
+    let messageList = document.getElementById('message-list');
+    if (!messageList) {
+        return -1;
+    }
+    let lastMessage = messageList.lastElementChild;
+    if (!lastMessage) {
+        return 0;
+    }
+    return +(lastMessage.dataset.messageId);
+}
+
+/**
  * Loads messages from server and starts the message updates
  */
-function startMessageUpdates() {
-    // TO DO implement messaging
+function startMessageUpdates(webSocketServer) {
+    webSocketServer.onmessage = (event) => {
+        let lastMessageId = getLastMessageID();
+        let messages = JSON.parse(event.data);
+        if (messages.length === 0) {
+            return;
+        }
+        if (messages[messages.length - 1].message_id <= lastMessageId) {
+            webSocketServer.send(JSON.stringify(['setMID', lastMessageId]));
+            return;
+        }
+        appendMessages(messages, lastMessageId);
+        console.log(messages[messages.length - 1].message_id);
+        webSocketServer.send(JSON.stringify(['setMID', messages[messages.length - 1].message_id]));
+    }
+}
+
+/**
+ * Adds new messages to the message list
+ *
+ * @param messages
+ * @param lastMessageId
+ */
+function appendMessages(messages, lastMessageId) {
+    let messageList = document.getElementById('message-list');
+    for (const message of messages) {
+        if (message.message_id <= lastMessageId) {
+            continue;
+        }
+        let messageNode = createMessageNode(message);
+        messageList.append(messageNode);
+    }
 }
 
 /**
@@ -275,6 +327,7 @@ function startMessageUpdates() {
  */
 function createMessageNode(message) {
     let messageNode = document.createElement('p');
+    messageNode.setAttribute('data-message-id', message.message_id);
     messageNode.textContent = message.user_name + ' ' + message.message_date + ': ' + message.message;
     return messageNode;
 }

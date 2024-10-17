@@ -50,7 +50,7 @@ async function register(user, password) {
  *
  * @param chatId
  * @returns {Promise<{}|{ Error: 'error type' }>}
- * Error types: SuchChatDoesntExist HostNotInTheChat InternalServerError WrongRequest Unknown error. Response code: status code
+ * Error types: SuchChatDoesntExist HostNotInTheChat InternalServerError Unauthorized WrongRequest Unknown error. Response code: status code
  */
 async function setActiveChat(chatId) {
     let chatData = new FormData();
@@ -78,7 +78,7 @@ async function setActiveChat(chatId) {
  *
  * @param chatName
  * @returns {Promise<{}|{ Error: 'error type' }>}
- * Error types: NameError NameExists InternalServerError WrongRequest Unknown error. Response code: status code
+ * Error types: NameError NameExists InternalServerError Unauthorized WrongRequest Unknown error. Response code: status code
  */
 async function newChat(chatName) {
     let chatData = new FormData();
@@ -106,14 +106,12 @@ async function newChat(chatName) {
  * Adds an existing user to an existing chat.
  *
  * @param userName
- * @param chatId
  * @returns {Promise<{}|{ Error: 'error type' }>}
- * Error types: UserNotFound SuchChatDoesntExist HostNotInTheChat InternalServerError WrongRequest Unknown error. Response code: status code
+ * Error types: UserNotFound SuchChatDoesntExist HostNotInTheChat Unauthorized InternalServerError WrongRequest Unknown error. Response code: status code
  */
-async function addUserToChat(userName, chatId){
+async function addUserToChat(userName){
     let data = new FormData();
     data.append('userName', userName);
-    data.append('chatId', chatId);
     let response = await fetch('/addUserToChat', {
         method: 'POST',
         body: data
@@ -156,11 +154,6 @@ async function getChatList() {
     }
 }
 
-async function startUpdates(){
-
-}
-
-
 /**
  * Loads all messages from the chosen chat
  *
@@ -175,9 +168,18 @@ async function getMessages(){
             switch (response.status) {
                 case 500 : return { Error: 'InternalServerError'};
                 case 400 : return { Error: 'WrongRequest'};
+                case 401 : return { Error: 'Unauthorized'};
                 default : return { Error: 'Unknown error. Response code: ' + response.status };
             }
         }
     }
     return await response.json();
 }
+
+/**
+ * Connects to the WebSocket server for the message updates
+ */
+function connectToWS() {
+    return new WebSocket('/webs');
+}
+
