@@ -57,20 +57,19 @@ function createChatInit() {
     let chatName = document.getElementById('chatName');
     let createBtn = document.getElementById('createChat');
 
-    createBtn.addEventListener('click', (event) => {
+    createBtn.addEventListener('click', async (event) => {
         event.preventDefault();
         toggleResultChatField();
         createBtn.setAttribute('disabled', '');
-        newChat(chatName.value).then(result => {
-            if (Object.hasOwn(result, 'Error')) {
-                createBtn.removeAttribute('disabled');
-                toggleResultChatField('error', result.Error);
-                return;
-            }
-            toggleResultChatField('success');
-            chatListReload();
+        let result = await newChat(chatName.value);
+        if (Object.hasOwn(result, 'Error')) {
             createBtn.removeAttribute('disabled');
-        });
+            toggleResultChatField('error', result.Error);
+            return;
+        }
+        toggleResultChatField('success');
+        await chatListReload();
+        createBtn.removeAttribute('disabled');
     });
 }
 
@@ -87,22 +86,21 @@ function chatListReloadInit() {
 /**
  * Reload chat list
  */
-function chatListReload() {
+async function chatListReload() {
     let chatList = document.querySelectorAll('#app aside .chat-node');
     let chatListNode = document.getElementById('chat-list');
     for (const chat of chatList) {
         chat.remove();
     }
-    getChatList().then(chatList => {
-        if (chatList.Error !== undefined) {
-            toggleResultChatField('error', chatList.Error);
-            return;
-        }
-        for (const chat of chatList) {
-            let chatNode = createChatNode(chat.chat_name, chat.chat_id);
-            chatListNode.append(chatNode);
-        }
-    });
+    chatList = await getChatList();
+    if (chatList.Error !== undefined) {
+        toggleResultChatField('error', chatList.Error);
+        return;
+    }
+    for (const chat of chatList) {
+        let chatNode = createChatNode(chat.chat_name, chat.chat_id);
+        chatListNode.append(chatNode);
+    }
 }
 
 /**
@@ -112,29 +110,27 @@ function chooseChatInit() {
     let chatListNode = document.getElementById('chat-list');
     let webSocketServer;
 
-    chatListNode.addEventListener('click', event => {
+    chatListNode.addEventListener('click', async event => {
         toggleResultChatField();
         if (event.target.dataset === undefined || event.target.dataset.chatId === undefined) {
             return;
         }
         let activeChatId = event.target.dataset.chatId;
-        setActiveChat(activeChatId).then(result => {
-            if (result.Error === undefined) {
-                toggleMessenger(event.target.dataset.chatName);
-                loadMessages().then(() => {
-                    setWindowMode();
-                    if (!webSocketServer) {
-                        webSocketServer = connectToWS();
-                        webSocketServer.onopen = () => {
-                            webSocketServer.send(JSON.stringify(['setMID', getLastMessageID()]));
-                        }
-                    }
-                    startMessageUpdates(webSocketServer);
-                });
-                return;
+        let result = await setActiveChat(activeChatId);
+        if (result.Error === undefined) {
+            toggleMessenger(event.target.dataset.chatName);
+            await loadMessages();
+            setWindowMode();
+            if (!webSocketServer) {
+                webSocketServer = connectToWS();
+                webSocketServer.onopen = () => {
+                webSocketServer.send(JSON.stringify(['setMID', getLastMessageID()]));
+                }
             }
-            toggleResultChatField('error', result.Error);
-        });
+            startMessageUpdates(webSocketServer);
+            return;
+        }
+        toggleResultChatField('error', result.Error);
     });
 }
 
@@ -189,19 +185,18 @@ function addUserToChatInit() {
     let userNameField = document.getElementById('user-name');
     let addBtn = document.getElementById('add');
 
-    addBtn.addEventListener('click', (event) => {
+    addBtn.addEventListener('click', async (event) => {
         event.preventDefault();
         toggleResultMessageField();
         addBtn.setAttribute('disabled', '');
         let userName = userNameField.value;
-        addUserToChat(userName).then(result => {
-            if (result.Error !== undefined) {
-                toggleResultMessageField('error', result.Error);
-            } else {
-                toggleResultMessageField('success');
-            }
-            addBtn.removeAttribute('disabled');
-        });
+        let result = await addUserToChat(userName);
+        if (result.Error !== undefined) {
+            toggleResultMessageField('error', result.Error);
+        } else {
+            toggleResultMessageField('success');
+        }
+        addBtn.removeAttribute('disabled');
     });
 }
 
@@ -255,18 +250,17 @@ function toggleMessenger(chatName) {
 /**
  * Fills the messages list then the chat starts
  */
-function loadMessages() {
+async function loadMessages() {
     let messageList = document.getElementById('message-list');
-    return getMessages().then(messages => {
-        if (messages.Error !== undefined) {
-            toggleResultMessageField(messages.Error);
-            return;
-        }
-        for (const message of messages) {
-            let messageNode = createMessageNode(message);
-            messageList.append(messageNode);
-        }
-    });
+    let messages = await getMessages();
+    if (messages.Error !== undefined) {
+        toggleResultMessageField(messages.Error);
+        return;
+    }
+    for (const message of messages) {
+        let messageNode = createMessageNode(message);
+        messageList.append(messageNode);
+    }
 }
 
 /**
