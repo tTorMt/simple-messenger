@@ -4,6 +4,7 @@ addUserToChatInit();
 chooseChatInit();
 setWindowMode();
 changeModeInit();
+enterKeyInit();
 
 /**
  * Changes between the compact and the full mode
@@ -355,6 +356,7 @@ function setMessagingActive(activate) {
     if (activate) {
         sendBtn.removeAttribute('disabled');
         messageTextField.removeAttribute('disabled');
+        messageTextField.focus();
         return;
     }
     sendBtn.setAttribute('disabled', '');
@@ -381,4 +383,39 @@ function messageSendingInit(webSocketServer) {
         }
         webSocketServer.send(JSON.stringify(['message', messageText]));
     });
+}
+
+/**
+ * Enter key events handler
+ * @param event
+ */
+function onButtonPress(event) {
+    let newChatInputField = document.getElementById('chatName');
+    let createChatBtn = document.getElementById('createChat');
+    let userNameField = document.getElementById('user-name');
+    let addUserBtn = document.getElementById('add');
+    let sendMessageField = document.getElementById('message');
+    let sendMessageBtn = document.getElementById('send');
+
+    if (event.code === 'NumpadEnter' || event.code === 'Enter') {
+        if (document.activeElement === newChatInputField) {
+            createChatBtn.click();
+            return;
+        }
+        if (document.activeElement === userNameField) {
+            addUserBtn.click();
+            return;
+        }
+        if (document.activeElement === sendMessageField && event.ctrlKey) {
+            sendMessageBtn.click();
+            return;
+        }
+    }
+}
+
+/**
+ * Initialize enter key handler
+ */
+function enterKeyInit() {
+    window.addEventListener('keyup', onButtonPress);
 }
