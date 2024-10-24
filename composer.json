@@ -9,8 +9,8 @@
         }
     ],
     "require": {
-        "swoole/ide-helper": "^5.1",
-        "ext-mysqli": "*"
+        "ext-mysqli": "*",
+        "ext-fileinfo": "*"
     },
     "autoload": {
         "psr-4": {
@@ -23,6 +23,7 @@
         }
     },
     "require-dev": {
+        "swoole/ide-helper": "^5.1",
         "phpstan/phpstan": "^1.11",
         "friendsofphp/php-cs-fixer": "^3.59",
         "phpunit/phpunit": "^11"
