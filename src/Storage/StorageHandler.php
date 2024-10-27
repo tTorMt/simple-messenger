@@ -24,7 +24,7 @@ class StorageHandler
         $month = date("m");
         $day = date("d");
         $path = __DIR__."/../../storage/$year/$month/$day/";
-        if (!is_dir($path)) {
+        if (!is_dir($path.'0')) {
             $path .= '0';
             if (!mkdir($path, 0770, true)) {
                 throw new DirectoryCouldNotBeCreatedException();
@@ -44,7 +44,7 @@ class StorageHandler
             }
             return $path;
         }
-        return $path.$latestDirNum.'/';
+        return $path.$latestDirNum;
     }
 
     /**
@@ -85,9 +85,28 @@ class StorageHandler
             throw new WrongImageTypeException();
         }
 
-        $savePath = ($this->getSavePath()).md5(uniqid());
+        $savePath = ($this->getSavePath()).'/'.md5(uniqid());
         if (!copy($path, $savePath)) {
             throw new ImageStoreException();
+        }
+        $storagePath = realpath(__DIR__.'/../../storage/');
+        $savePath = realpath($savePath);
+        return str_replace($storagePath.'/', '', $savePath);
+    }
+
+    /**
+     * Stores different types of files.
+     * @param string $path
+     * @param string $fileName
+     * @return string relative to the storage file path (hash.FILENAME)
+     * @throws DirectoryCouldNotBeCreatedException
+     * @throws FileStoreException
+     */
+    public function storeFile(string $path, string $fileName): string
+    {
+        $savePath = ($this->getSavePath()).'/'.md5(uniqid()).'$'.$fileName;
+        if (!copy($path, $savePath)) {
+            throw new FileStoreException();
         }
         $storagePath = realpath(__DIR__.'/../../storage/');
         $savePath = realpath($savePath);

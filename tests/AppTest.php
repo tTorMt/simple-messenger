@@ -9,10 +9,11 @@ use Psr\Log\LoggerInterface;
 use tTorMt\SChat\App;
 use tTorMt\SChat\Logger\DefaultLogger;
 use tTorMt\SChat\Messenger\ChatManager;
-use tTorMt\SChat\Messenger\ChatStoreException;
 use tTorMt\SChat\Messenger\SessionDataException;
 use tTorMt\SChat\Storage\DBHandler;
+use tTorMt\SChat\Storage\DirectoryCouldNotBeCreatedException;
 use tTorMt\SChat\Storage\MySqlHandler;
+use tTorMt\SChat\Storage\StorageHandler;
 
 class AppTest extends TestCase
 {
@@ -340,6 +341,98 @@ class AppTest extends TestCase
     /**
      * @throws Exception
      */
+    #[Depends('testActiveChat')]
+    public function testUploadFileUnknownError(): void
+    {
+        $this->expectOutputString(json_encode(['Error' => 'UnknownError']));
+        $dbMock = $this->createStub(DBHandler::class);
+        $dbMock->method('storeMessage')->willThrowException(new \Exception());
+        $app = new App($dbMock);
+        $logger = $this->createStub(LoggerInterface::class);
+        $app->setLogger($logger);
+        $_FILES['file'] = [
+            'type' => 'some/type',
+            'tmp_name' => __DIR__.'/assets/test.file',
+            'error' => UPLOAD_ERR_OK,
+            'name' => 'test.file'
+        ];
+        $app->uploadFile();
+        $this->assertSame(500, http_response_code());
+    }
+
+    /**
+     * @throws DirectoryCouldNotBeCreatedException
+     */
+    #[Depends('testActiveChat')]
+    public function testUploadFile(): void
+    {
+        $this->expectOutputString('');
+
+        $userId = $_SESSION['userId'];
+        unset($_SESSION['userId']);
+        unset($_FILES['file']);
+        self::$app->uploadFile();
+        $this->assertSame(400, http_response_code());
+
+        $_SESSION['userId'] = $userId;
+        $_FILES['file'] = [
+            'type' => 'some/type',
+            'tmp_name' => __DIR__.'/assets/test.file',
+            'error' => UPLOAD_ERR_OK,
+            'name' => 'test.file'
+        ];
+        self::$app->uploadFile();
+        $this->assertSame(200, http_response_code());
+        $messages = self::$handler->getAllMessages(self::COOKIE);
+        $fileMessageRow = $messages[count($messages) - 1];
+        $this->assertSame((int)$fileMessageRow['is_file'], 1);
+
+        $_FILES['file'] = [
+            'type' => 'image/jpeg',
+            'tmp_name' => __DIR__.'/assets/img.jpg',
+            'error' => UPLOAD_ERR_OK,
+            'name' => 'img.jpg'
+        ];
+        self::$app->uploadFile();
+        $this->assertSame(200, http_response_code());
+        $messages = self::$handler->getAllMessages(self::COOKIE);
+        $fileMessageRow = $messages[count($messages) - 1];
+        $this->assertSame((int)$fileMessageRow['is_file'], 1);
+
+        $storageHandler = new StorageHandler();
+        $activePath = $storageHandler->getSavePath();
+        $pathToRemove = realpath($activePath.'/..');
+        $storageHandler->removeDir($pathToRemove);
+    }
+
+    #[Depends('testActiveChat')]
+    public function testUploadError(): void
+    {
+        $_FILES['file'] = [
+            'error' => 1
+        ];
+        $this->expectOutputString(json_encode(['Error' => 'UploadError '.'1']));
+        self::$app->uploadFile();
+        $this->assertSame(400, http_response_code());
+    }
+
+    #[Depends('testActiveChat')]
+    public function testWrongTypeUploadError(): void
+    {
+        $_FILES['file'] = [
+            'type' => 'image/png',
+            'tmp_name' => __DIR__.'/assets/test.file',
+            'error' => UPLOAD_ERR_OK,
+            'name' => 'test.file'
+        ];
+        self::$app->uploadFile();
+        $this->expectOutputString(json_encode(['Error' => 'WrongImageType']));
+        $this->assertSame(400, http_response_code());
+    }
+
+    /**
+     * @throws Exception
+     */
     #[Depends('testChatList')]
     public function testAddUserToChatHostNotInChat(): void
     {
@@ -414,8 +507,8 @@ class AppTest extends TestCase
     public function testLoadMessages(): void
     {
         $_SESSION['userId'] = self::$firstUserID;
-        self::$handler->storeMessage(self::COOKIE, 'foo');
-        self::$handler->storeMessage(self::COOKIE, 'bar');
+        self::$handler->storeMessage(self::COOKIE, 'foo', false);
+        self::$handler->storeMessage(self::COOKIE, 'bar', false);
         $chatManager = new ChatManager(self::COOKIE, self::$handler);
         $messages = $chatManager->loadMessages();
         $this->expectOutputString(json_encode($messages));

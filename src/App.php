@@ -14,11 +14,16 @@ use tTorMt\SChat\Messenger\NameExistsException;
 use tTorMt\SChat\Messenger\NotInTheChatException;
 use tTorMt\SChat\Messenger\SessionDataException;
 use tTorMt\SChat\Storage\DBHandler;
+use tTorMt\SChat\Storage\DirectoryCouldNotBeCreatedException;
+use tTorMt\SChat\Storage\ImageStoreException;
+use tTorMt\SChat\Storage\StorageHandler;
+use tTorMt\SChat\Storage\WrongImageTypeException;
 
 class App
 {
     private DBHandler $DBHandler;
     private LoggerInterface $logger;
+    private const array ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif'];
 
     public function __construct(DBHandler $DBHandler)
     {
@@ -288,6 +293,52 @@ class App
                 return;
             } catch (\Exception $exception) {
                 $this->logger->error($exception);
+                http_response_code(500);
+            }
+            return;
+        }
+        http_response_code(400);
+    }
+
+    /**
+     * API method to upload file to server
+     *
+     * @return void
+     */
+    public function uploadFile(): void
+    {
+        if (isset($_SESSION['userId']) && isset($_FILES['file'])) {
+            if ($_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+                http_response_code(400);
+                echo json_encode(['Error' => 'UploadError '.$_FILES['file']['error']]);
+                return;
+            }
+            try {
+                $storageHandler = new StorageHandler();
+                $fileType = $_FILES['file']['type'];
+                $filePath = $_FILES['file']['tmp_name'];
+                $fileName = $_FILES['file']['name'];
+                if (in_array($fileType, self::ALLOWED_IMAGE_TYPES)) {
+                    $savedPath = $storageHandler->storeImage($filePath);
+                    $this->DBHandler->storeMessage(session_id(), $savedPath, true);
+                    http_response_code(200);
+                    return;
+                }
+                $savedPath = $storageHandler->storeFile($filePath, $fileName);
+                $this->DBHandler->storeMessage(session_id(), $savedPath, true);
+                http_response_code(200);
+            } catch (ImageStoreException|DirectoryCouldNotBeCreatedException $exception) {
+                $this->logger->error($exception);
+                http_response_code(500);
+                echo json_encode(['Error' => 'ImageStoreError']);
+                return;
+            } catch (WrongImageTypeException $exception) {
+                http_response_code(400);
+                echo json_encode(['Error' => 'WrongImageType']);
+                return;
+            } catch (\Exception $exception) {
+                $this->logger->error($exception);
+                echo json_encode(['Error' => 'UnknownError']);
                 http_response_code(500);
             }
             return;

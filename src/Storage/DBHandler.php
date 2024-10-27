@@ -164,9 +164,10 @@ interface DBHandler
      *
      * @param string $sessionId
      * @param string $message
+     * @param bool $isFile
      * @return bool
      */
-    public function storeMessage(string $sessionId, string $message): bool;
+    public function storeMessage(string $sessionId, string $message, bool $isFile): bool;
 
     /**
      * Removes messages from chat table by chat ID

@@ -5,6 +5,7 @@ namespace tTorMt\SChat\Tests;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use tTorMt\SChat\Storage\DirectoryCouldNotBeCreatedException;
+use tTorMt\SChat\Storage\FileStoreException;
 use tTorMt\SChat\Storage\ImageStoreException;
 use tTorMt\SChat\Storage\StorageHandler;
 use tTorMt\SChat\Storage\WrongImageTypeException;
@@ -47,7 +48,7 @@ class StorageHandlerTest extends TestCase
         $path = $storageHandler->getSavePath();
         $this->assertSame(realpath(self::$path.'/0'), realpath($path));
         for ($i = 1; $i < 1001; $i++) {
-            touch($path.'file'.$i);
+            touch($path.'/file'.$i);
         }
         $path = $storageHandler->getSavePath();
         $this->assertSame(realpath(self::$path.'/1'), realpath($path));
@@ -94,6 +95,20 @@ class StorageHandlerTest extends TestCase
     {
         $this->expectException(WrongImageTypeException::class);
         $storageHandler->storeImage(__FILE__);
+    }
+
+    /**
+     * @throws FileStoreException
+     * @throws DirectoryCouldNotBeCreatedException
+     */
+    #[Depends('testGetSavePath')]
+    public function testStoreFile(StorageHandler $storageHandler): void
+    {
+        $storagePath = realpath(__DIR__.'/../storage');
+        $filePath = $storageHandler->storeFile(__DIR__.'/assets/test.file', 'test.file');
+        $filePath = $storagePath.'/'.$filePath;
+        $this->assertTrue(file_exists($filePath));
+        $this->assertSame(file_get_contents(__DIR__.'/assets/test.file'), file_get_contents($filePath));
     }
 
     /**

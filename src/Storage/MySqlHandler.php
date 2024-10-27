@@ -33,12 +33,12 @@ class MySqlHandler implements DBHandler
         'getChatList' => 'SELECT chat_name, chat_id, chat_type FROM chat JOIN chat_user USING(chat_id) WHERE user_id = (SELECT user_id FROM session_data WHERE cookie = ?)',
         'setActiveChat' => 'UPDATE session_data SET active_chat_id = ? WHERE cookie = ?',
         'getActiveChat' => 'SELECT active_chat_id FROM session_data WHERE cookie = ?',
-        'getAllMessages' => 'SELECT user_name, chat_id, message, message_date, message_id FROM message JOIN user USING(user_id) WHERE chat_id = (SELECT active_chat_id FROM session_data WHERE cookie =?) ORDER BY message_id',
-        'getLastMessages' => 'SELECT user_name, chat_id, message, message_date, message_id FROM message JOIN user USING(user_id) WHERE chat_id = (SELECT active_chat_id FROM session_data WHERE cookie =?) AND message.message_id > ? ORDER BY message_id',
+        'getAllMessages' => 'SELECT user_name, chat_id, message, message_date, message_id, is_file FROM message JOIN user USING(user_id) WHERE chat_id = (SELECT active_chat_id FROM session_data WHERE cookie =?) ORDER BY message_id',
+        'getLastMessages' => 'SELECT user_name, chat_id, message, message_date, message_id, is_file FROM message JOIN user USING(user_id) WHERE chat_id = (SELECT active_chat_id FROM session_data WHERE cookie =?) AND message.message_id > ? ORDER BY message_id',
         'storeSession' => 'INSERT INTO session_data (user_id, cookie) VALUES (?, ?) ON DUPLICATE KEY UPDATE cookie = ?',
         'deleteSession' => 'DELETE FROM session_data WHERE user_id = ?',
         'getSessionData' => 'SELECT user_id, active_chat_id FROM session_data WHERE cookie = ?',
-        'storeMessage' => 'INSERT INTO message (user_id, chat_id, message) SELECT user_id, active_chat_id, ? FROM session_data WHERE cookie = ?',
+        'storeMessage' => 'INSERT INTO message (user_id, chat_id, message, is_file) SELECT user_id, active_chat_id, ?, ? FROM session_data WHERE cookie = ?',
         'deleteMessagesFromChat' => 'DELETE FROM message WHERE chat_id = ?'
     ];
 
@@ -254,7 +254,7 @@ class MySqlHandler implements DBHandler
      * Retrieves all messages from the active chat (active chat id from the session)
      *
      * @param string $sessionId
-     * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
+     * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>, 'is_file' =>]
      */
     public function getAllMessages(string $sessionId): array
     {
@@ -272,7 +272,7 @@ class MySqlHandler implements DBHandler
      *
      * @param string $sessionId
      * @param int $lastMessageId
-     * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>]
+     * @return array ['user_name' =>, 'chat_id' =>, 'message' =>, 'messages_date' =>, 'message_id' =>, 'is_file' =>]
      */
     public function getLastMessages(string $sessionId, int $lastMessageId): array
     {
@@ -336,12 +336,13 @@ class MySqlHandler implements DBHandler
      *
      * @param string $sessionId
      * @param string $message
+     * @param bool $isFile
      * @return bool
      */
-    public function storeMessage(string $sessionId, string $message): bool
+    public function storeMessage(string $sessionId, string $message, bool $isFile = false): bool
     {
         $statement = $this->dataBase->prepare(self::QUERIES['storeMessage']);
-        $statement->bind_param('ss', $message, $sessionId);
+        $statement->bind_param('sis', $message, $isFile, $sessionId);
         $statement->execute();
         return $statement->affected_rows > 0;
     }

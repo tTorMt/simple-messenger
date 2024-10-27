@@ -131,7 +131,7 @@ class ChatUser
         switch ($message[0]) {
             case 'message': {
                 try {
-                    $isStored = $this->storage->storeMessage($this->sessionId, $message[1]);
+                    $isStored = $this->storage->storeMessage($this->sessionId, $message[1], false);
                     if (!$isStored) {
                         throw new MessageStoreException('Failed to send message to user FD '.$this->userFd);
                     }
