@@ -15,6 +15,7 @@ use tTorMt\SChat\Messenger\NotInTheChatException;
 use tTorMt\SChat\Messenger\SessionDataException;
 use tTorMt\SChat\Storage\DBHandler;
 use tTorMt\SChat\Storage\DirectoryCouldNotBeCreatedException;
+use tTorMt\SChat\Storage\FileStoreException;
 use tTorMt\SChat\Storage\ImageStoreException;
 use tTorMt\SChat\Storage\StorageHandler;
 use tTorMt\SChat\Storage\WrongImageTypeException;
@@ -331,6 +332,11 @@ class App
                 $this->logger->error($exception);
                 http_response_code(500);
                 echo json_encode(['Error' => 'ImageStoreError']);
+                return;
+            } catch (FileStoreException $exception) {
+                $this->logger->error($exception);
+                http_response_code(500);
+                echo json_encode(['Error' => 'FileStoreError']);
                 return;
             } catch (WrongImageTypeException $exception) {
                 http_response_code(400);
