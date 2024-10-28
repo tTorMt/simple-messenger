@@ -39,7 +39,8 @@ class MySqlHandler implements DBHandler
         'deleteSession' => 'DELETE FROM session_data WHERE user_id = ?',
         'getSessionData' => 'SELECT user_id, active_chat_id FROM session_data WHERE cookie = ?',
         'storeMessage' => 'INSERT INTO message (user_id, chat_id, message, is_file) SELECT user_id, active_chat_id, ?, ? FROM session_data WHERE cookie = ?',
-        'deleteMessagesFromChat' => 'DELETE FROM message WHERE chat_id = ?'
+        'deleteMessagesFromChat' => 'DELETE FROM message WHERE chat_id = ?',
+        'getFilePath' => 'SELECT message FROM message JOIN session_data ON message.chat_id = session_data.active_chat_id WHERE is_file = 1 AND cookie = ? AND message_id = ?'
     ];
 
     /**
@@ -377,5 +378,23 @@ class MySqlHandler implements DBHandler
         $result = $result->fetch_assoc();
         $statement->close();
         return !empty($result);
+    }
+
+    /**
+     * Retrieves the path of a file stored in a message from an active chat.
+     *
+     * @param string $sessionId
+     * @param int $messageId
+     * @return string|false
+     */
+    public function getFilePath(string $sessionId, int $messageId): string|false
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['getFilePath']);
+        $statement->bind_param('si', $sessionId, $messageId);
+        $statement->execute();
+        $result = $statement->get_result();
+        $result = $result->fetch_assoc();
+        $statement->close();
+        return empty($result) ? false : $result['message'];
     }
 }

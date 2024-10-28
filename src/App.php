@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tTorMt\SChat;
 
+use finfo;
 use Psr\Log\LoggerInterface;
 use tTorMt\SChat\Auth\AuthHandler;
 use tTorMt\SChat\Auth\AuthValidator;
@@ -347,6 +348,41 @@ class App
                 echo json_encode(['Error' => 'UnknownError']);
                 http_response_code(500);
             }
+            return;
+        }
+        http_response_code(400);
+    }
+
+    /**
+     * API method to get files from messages
+     *
+     * @return void
+     */
+    public function getFile(): void
+    {
+        if (isset($_SESSION['userId']) && isset($_GET['messageId'])) {
+            $filePath = $this->DBHandler->getFilePath(session_id(), (int)$_GET['messageId']);
+            $storageDir = __DIR__.'/../storage/';
+            if ($filePath === false || !file_exists($filePath = $storageDir.$filePath)) {
+                echo json_encode(['Error' => 'FileNotFound']);
+                http_response_code(404);
+                return;
+            }
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $fileType = $finfo->file($filePath);
+            if (in_array($fileType, self::ALLOWED_IMAGE_TYPES)) {
+                header('Content-Type: '.$fileType);
+                header('Content-Length: '.filesize($filePath));
+                readfile($filePath);
+                return;
+            }
+            $fileName = explode('$', $filePath)[1];
+            header('Content-Disposition: attachment; filename='.$fileName);
+            header('Content-Type: '.$fileType);
+            header('Content-Length: '.filesize($filePath));
+            ob_clean();
+            flush();
+            readfile($filePath);
             return;
         }
         http_response_code(400);

@@ -33,8 +33,16 @@ class AppTest extends TestCase
         session_id(self::COOKIE);
     }
 
+    /**
+     * @throws DirectoryCouldNotBeCreatedException
+     */
     public static function tearDownAfterClass(): void
     {
+
+        $storageHandler = new StorageHandler();
+        $activePath = $storageHandler->getSavePath();
+        $pathToRemove = realpath($activePath.'/..');
+        $storageHandler->removeDir($pathToRemove);
         self::$handler->deleteMessagesFromChat(self::$chatID);
         self::$handler->deleteSession(self::$firstUserID);
         self::$handler->deleteUserFromChat(self::$firstUserID, self::$chatID);
@@ -360,13 +368,11 @@ class AppTest extends TestCase
         $this->assertSame(500, http_response_code());
     }
 
-    /**
-     * @throws DirectoryCouldNotBeCreatedException
-     */
     #[Depends('testActiveChat')]
-    public function testUploadFile(): void
+    public function testUploadFile(): array
     {
         $this->expectOutputString('');
+        $testData = [];
 
         $userId = $_SESSION['userId'];
         unset($_SESSION['userId']);
@@ -386,6 +392,8 @@ class AppTest extends TestCase
         $messages = self::$handler->getAllMessages(self::COOKIE);
         $fileMessageRow = $messages[count($messages) - 1];
         $this->assertSame((int)$fileMessageRow['is_file'], 1);
+        $testData['anyTypeMessageID'] = $fileMessageRow['message_id'];
+        $testData['anyTypeFilePath'] = $fileMessageRow['message'];
 
         $_FILES['file'] = [
             'type' => 'image/jpeg',
@@ -398,11 +406,10 @@ class AppTest extends TestCase
         $messages = self::$handler->getAllMessages(self::COOKIE);
         $fileMessageRow = $messages[count($messages) - 1];
         $this->assertSame((int)$fileMessageRow['is_file'], 1);
+        $testData['imageMessageID'] = $fileMessageRow['message_id'];
+        $testData['imageFilePath'] = $fileMessageRow['message'];
 
-        $storageHandler = new StorageHandler();
-        $activePath = $storageHandler->getSavePath();
-        $pathToRemove = realpath($activePath.'/..');
-        $storageHandler->removeDir($pathToRemove);
+        return $testData;
     }
 
     #[Depends('testActiveChat')]
@@ -428,6 +435,50 @@ class AppTest extends TestCase
         self::$app->uploadFile();
         $this->expectOutputString(json_encode(['Error' => 'WrongImageType']));
         $this->assertSame(400, http_response_code());
+    }
+
+    #[Depends('testUploadFile')]
+    public function testGetFile(array $testData): void
+    {
+        unset($_GET['messageId']);
+        $userID = $_SESSION['userId'];
+        unset($_SESSION['userId']);
+        self::$app->getFile();
+        $this->assertSame(400, http_response_code());
+
+        $_SESSION['userId'] = $userID;
+        $storagePath = __DIR__.'/../storage/';
+        $_GET['messageId'] = $testData['imageMessageID'];
+        ob_start();
+        self::$app->getFile();
+        $imageOutput = ob_get_clean();
+        $this->assertNotEmpty($imageOutput);
+        $imageFromStorage = file_get_contents($storagePath.$testData['imageFilePath']);
+        $this->assertSame($imageFromStorage, $imageOutput);
+        $headers = xdebug_get_headers();
+        $this->assertContains('Content-Type: image/jpeg', $headers);
+        $this->assertContains('Content-Length: '. filesize($storagePath.$testData['imageFilePath']), $headers);
+
+        $_GET['messageId'] = $testData['anyTypeMessageID'];
+        ob_start();
+        self::$app->getFile();
+        $fileOutput = ob_get_clean();
+        $this->assertNotEmpty($imageOutput);
+        $fileFromStorage = file_get_contents($storagePath.$testData['anyTypeFilePath']);
+        $this->assertSame($fileFromStorage, $fileOutput);
+        $headers = xdebug_get_headers();
+        $this->assertContains('Content-type: text/plain;charset=UTF-8', $headers);
+        $this->assertContains('Content-Disposition: attachment; filename=test.file', $headers);
+        $this->assertContains('Content-Length: '. filesize($storagePath.$testData['anyTypeFilePath']), $headers);
+    }
+
+    #[Depends('testUploadFile')]
+    public function testGetFileNotFount(): void
+    {
+        $this->expectOutputString(json_encode(['Error' => 'FileNotFound']));
+        $_GET['messageId'] = -1;
+        self::$app->getFile();
+        $this->assertSame(404, http_response_code());
     }
 
     /**

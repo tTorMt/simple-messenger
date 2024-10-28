@@ -26,6 +26,6 @@
         "swoole/ide-helper": "^5.1",
         "phpstan/phpstan": "^1.11",
         "friendsofphp/php-cs-fixer": "^3.59",
-        "phpunit/phpunit": "^11"
+        "phpunit/phpunit": "^11","ext-xdebug": "*"
     }
 }

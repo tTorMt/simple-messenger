@@ -19,6 +19,7 @@ class DBHandlerTest extends TestCase
     private const string COOKIE = 'MyTestCookie123';
     private const string MESSAGE_ONE = 'MyTestMessage1';
     private const string MESSAGE_TWO = 'MyTestMessage2';
+    private const string PATH_TO_FILE = '/path/to/file';
 
     public static function setUpBeforeClass(): void
     {
@@ -108,8 +109,8 @@ class DBHandlerTest extends TestCase
     #[Depends('testActiveChat')]
     public function testMessaging(array $testData): array
     {
-        $this->assertTrue(self::$handler->storeMessage(self::COOKIE, self::MESSAGE_ONE));
-        $this->assertTrue(self::$handler->storeMessage(self::COOKIE, self::MESSAGE_TWO));
+        $this->assertTrue(self::$handler->storeMessage(self::COOKIE, self::MESSAGE_ONE, false));
+        $this->assertTrue(self::$handler->storeMessage(self::COOKIE, self::MESSAGE_TWO, false));
         $messages = self::$handler->getAllMessages(self::COOKIE);
         $this->assertNotEmpty($messages);
         $firstMessageId = $messages[0]['message_id'];
@@ -117,6 +118,23 @@ class DBHandlerTest extends TestCase
         $this->assertNotEmpty($messagesFromId);
         $this->assertSame($messages[1], $messagesFromId[0]);
         return $testData;
+    }
+
+    #[Depends('testActiveChat')]
+    public function testGetFilePath(array $testData): void
+    {
+        self::$handler->storeMessage(self::COOKIE, self::PATH_TO_FILE, true);
+        $messages = self::$handler->getAllMessages(self::COOKIE);
+        $fileMessage = $messages[count($messages) - 1];
+        $filePath = self::$handler->getFilePath(self::COOKIE, $fileMessage['message_id']);
+        $this->assertNotFalse($filePath);
+        $this->assertSame($filePath, self::PATH_TO_FILE);
+
+        self::$handler->storeMessage(self::COOKIE, 'not file message', false);
+        $messages = self::$handler->getAllMessages(self::COOKIE);
+        $fileMessage = $messages[count($messages) - 1];
+        $filePath = self::$handler->getFilePath(self::COOKIE, $fileMessage['message_id']);
+        $this->assertFalse($filePath);
     }
 
     #[Depends('testMessaging')]

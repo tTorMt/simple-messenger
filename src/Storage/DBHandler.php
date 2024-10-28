@@ -176,4 +176,13 @@ interface DBHandler
      * @return bool
      */
     public function deleteMessagesFromChat(int $chatId): bool;
+
+    /**
+     * Retrieves the path of a file stored in a message from an active chat.
+     *
+     * @param string $sessionId
+     * @param int $messageId
+     * @return string|false
+     */
+    public function getFilePath(string $sessionId, int $messageId): string|false;
 }
