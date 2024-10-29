@@ -176,6 +176,44 @@ async function getMessages(){
     return await response.json();
 }
 
+
+async function loadFile(messageID) {
+    let response = await fetch('/getFile?messageId=' + messageID);
+    const imageTypes = ['image/jpeg', 'image/gif', 'image/png'];
+    if (!response.ok) {
+        try {
+            return await response.json();
+        } catch (exception) {
+            switch (response.status) {
+                case 500 : return { Error: 'InternalServerError' };
+                case 400 : return { Error: 'WrongRequest' };
+                default : return { Error: 'Unknown error. Response code: ' + response.status }
+            }
+        }
+    }
+    let file;
+    try {
+        file = await response.blob();
+    } catch (exception) {
+        return { Error: 'FileCreationError'};
+    }
+    if (imageTypes.includes(response.headers.get('Content-Type'))) {
+        let imageURL = URL.createObjectURL(file);
+        let imgElement = document.createElement('img');
+        imgElement.classList.add('message-image');
+        imgElement.src = imageURL;
+        return imgElement;
+    }
+    let fileURL = URL.createObjectURL(file);
+    let fileElement = document.createElement('a');
+    fileElement.classList.add('message-file');
+    fileElement.href = fileURL;
+    let fileName = (response.headers.get('Content-Disposition')).split('filename=')[1];
+    fileElement.download = fileName;
+    fileElement.textContent = fileName;
+    return fileElement;
+}
+
 /**
  * Connects to the WebSocket server for the message updates
  */
