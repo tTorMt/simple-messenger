@@ -185,17 +185,21 @@ class ChatManagerTest extends TestCase
     #[Depends('testSetActiveChat')]
     public function testLoadMessages(ChatManager $chatManager): void
     {
-        self::$storage->storeMessage(self::MAIN_USER_SESSION_ID, 'foo');
-        self::$storage->storeMessage(self::SECOND_USER_SESSION_ID, 'bar');
+        self::$storage->storeMessage(self::MAIN_USER_SESSION_ID, 'foo', false);
+        self::$storage->storeMessage(self::SECOND_USER_SESSION_ID, 'bar', false);
+        self::$storage->storeMessage(self::MAIN_USER_SESSION_ID, '/path/to/file', true);
         $messages = $chatManager->loadMessages();
         self::assertNotEmpty($messages);
         self::assertSame(
             [
                 $messages[0]['user_name'], $messages[0]['chat_id'], $messages[0]['message'],
-                $messages[1]['user_name'], $messages[1]['chat_id'], $messages[1]['message']],
+                $messages[1]['user_name'], $messages[1]['chat_id'], $messages[1]['message'],
+                $messages[2]['user_name'], $messages[2]['chat_id'], $messages[2]['message']
+            ],
             [
                 self::MAIN_USER_NAME, self::$chatID, 'foo',
-                self::SECOND_USER_NAME, self::$chatID, 'bar'
+                self::SECOND_USER_NAME, self::$chatID, 'bar',
+                self::MAIN_USER_NAME, self::$chatID, ''
             ]
         );
     }

@@ -140,6 +140,12 @@ class ChatManager
      */
     public function loadMessages(): array
     {
-        return $this->DBHandler->getAllMessages($this->sessionId);
+        $messages = $this->DBHandler->getAllMessages($this->sessionId);
+        array_walk($messages, function (&$message, $idx) {
+            if ($message['is_file']) {
+                $message['message'] = '';
+            }
+        });
+        return $messages;
     }
 }
