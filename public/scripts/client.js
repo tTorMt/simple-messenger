@@ -176,7 +176,11 @@ async function getMessages(){
     return await response.json();
 }
 
-
+/**
+ * Loads a file from file type message ID
+ * @param messageID
+ * @returns {Promise<HTMLAnchorElement|HTMLImageElement|any|{Error: string}>}
+ */
 async function loadFile(messageID) {
     let response = await fetch('/getFile?messageId=' + messageID);
     const imageTypes = ['image/jpeg', 'image/gif', 'image/png'];

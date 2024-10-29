@@ -109,6 +109,11 @@ body {
     flex: 1;
 }
 
+.message-image {
+    width: 100%;
+    max-width: 500px;
+}
+
 #result-message-field {
     margin: 5px;
 }

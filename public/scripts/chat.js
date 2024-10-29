@@ -342,7 +342,24 @@ function createMessageNode(message) {
     let messageNode = document.createElement('p');
     messageNode.setAttribute('data-message-id', message.message_id);
     messageNode.textContent = message.user_name + ' ' + message.message_date + ': ' + message.message;
+    if (message.is_file == 1) {
+        createFileNode(messageNode);
+    }
     return messageNode;
+}
+
+/**
+ * Creates a file node and appends it to message node
+ * @param messageNode
+ */
+async function createFileNode(messageNode) {
+    let messageId = messageNode.dataset.messageId;
+    let fileElement = await loadFile(messageId);
+    if (fileElement.Error !== undefined) {
+        messageNode.append(fileElement.Error);
+        return;
+    }
+    messageNode.append(fileElement);
 }
 
 /**
