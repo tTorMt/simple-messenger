@@ -1,6 +1,7 @@
 createChatInit();
 chatListReloadInit();
 addUserToChatInit();
+sendFileInit();
 chooseChatInit();
 setWindowMode();
 changeModeInit();
@@ -206,6 +207,28 @@ function addUserToChatInit() {
             toggleResultMessageField('success');
         }
         addBtn.removeAttribute('disabled');
+    });
+}
+
+/**
+ * Sends a file message to the server
+ */
+function sendFileInit() {
+    let fileField = document.getElementById('file');
+    let fileSendBtn = document.getElementById('send-file');
+
+    fileSendBtn.addEventListener('click', async () => {
+        fileSendBtn.setAttribute('disabled', 'true');
+        if (fileField.files.length === 0) {
+            return;
+        }
+        let result = await sendFile(fileField.files[0]);
+        if (result.Error !== undefined) {
+            toggleResultMessageField('error', result.Error);
+        } else {
+            toggleResultMessageField('success');
+        }
+        fileSendBtn.removeAttribute('disabled');
     });
 }
 

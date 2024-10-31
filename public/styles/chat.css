@@ -100,7 +100,7 @@ body {
     overflow: auto;
 }
 
-#message-send, #add-user {
+#message-send, #add-user, #file-send {
     display: flex;
     margin: 5px;
 }

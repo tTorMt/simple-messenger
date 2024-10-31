@@ -48,6 +48,11 @@
                 <input id="user-name" name="user-name" placeholder="Type a user name...">
                 <button id="add">Add</button>
             </div>
+            <div id="file-send">
+                <label for="file">Send file</label>
+                <input type="file" id="file" name="file">
+                <button id="send-file">Send</button>
+            </div>
             <div id="message-send">
                 <textarea id="message" rows="1" placeholder="Type a message..." disabled></textarea>
                 <button id="send" disabled>Send</button>

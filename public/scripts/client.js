@@ -219,6 +219,31 @@ async function loadFile(messageID) {
 }
 
 /**
+ * Sends file to the server
+ * @param file
+ */
+async function sendFile(file) {
+    let data = new FormData();
+    data.append('file', file);
+    let response = await fetch('/uploadFile',{
+        method: 'POST',
+        body: data
+    });
+    if (!response.ok) {
+        try {
+            return await response.json();
+        } catch (exception) {
+            switch (response.status) {
+                case 400 : return { Error: 'WrongRequest'};
+                case 500 : return { Error: 'InternalServerError'};
+                default : return { Error: 'Unknown error. Response code: ' + response.status };
+            }
+        }
+    }
+    return {};
+}
+
+/**
  * Connects to the WebSocket server for the message updates
  */
 function connectToWS() {
