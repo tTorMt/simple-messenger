@@ -75,8 +75,28 @@ class ChatUserTest extends TestCase
         $DBMock->method('setActiveChat')->willReturn(true);
         $chatUser = new ChatUser(0, self::TEST_SESSION_ID, 0, $serverMock, $DBMock);
         $chatUser->process(['setGID', [1, 1]]);
-        $serverMock->expects($this->once())->method('push')->with($this->identicalTo(0), $this->identicalTo(json_encode(['foo', 'bar'])));
-        $DBMock->expects($this->once())->method('getLastMessages')->with($this->identicalTo(self::TEST_SESSION_ID), $this->identicalTo(1))->willReturn(['foo', 'bar']);
+        $serverMock->expects($this->once())->method('push')->with($this->identicalTo(0), $this->identicalTo(json_encode([
+            [ 'message' => 'foo', 'is_file' => false ],
+            [ 'message' => 'bar', 'is_file' => false ]
+        ])));
+        $DBMock->expects($this->once())->method('getLastMessages')->with($this->identicalTo(self::TEST_SESSION_ID), $this->identicalTo(1))->willReturn([
+            [ 'message' => 'foo', 'is_file' => false ],
+            [ 'message' => 'bar', 'is_file' => false ]
+        ]);
+        $updateReflect->invoke($chatUser);
+        $chatUser->process(['close']);
+
+        $serverMock = $this->createMock(Server::class);
+        $DBMock = $this->createMock(DBHandler::class);
+        $DBMock->method('setActiveChat')->willReturn(true);
+        $chatUser = new ChatUser(0, self::TEST_SESSION_ID, 0, $serverMock, $DBMock);
+        $chatUser->process(['setGID', [1, 1]]);
+        $serverMock->expects($this->once())->method('push')->with($this->identicalTo(0), $this->identicalTo(json_encode([
+            [ 'message' => '', 'is_file' => true ]
+        ])));
+        $DBMock->expects($this->once())->method('getLastMessages')->with($this->identicalTo(self::TEST_SESSION_ID), $this->identicalTo(1))->willReturn([
+            [ 'message' => '/path/to/file', 'is_file' => true ]
+        ]);
         $updateReflect->invoke($chatUser);
         $chatUser->process(['close']);
 

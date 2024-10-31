@@ -91,6 +91,11 @@ class ChatUser
             return;
         }
         $messages = $this->storage->getLastMessages($this->sessionId, $this->lastMID);
+        array_walk($messages, function (&$message, $idx) {
+            if ($message['is_file']) {
+                $message['message'] = '';
+            }
+        });
         $messages = json_encode($messages);
         $this->server->push($this->userFd, $messages);
     }
