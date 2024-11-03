@@ -21,15 +21,16 @@ interface DBHandler
      *
      * @param string $userName
      * @param string $passwordHash
+     * @param string $email
      * @return int - new user id
      */
-    public function newUser(string $userName, string $passwordHash): int;
+    public function newUser(string $userName, string $passwordHash, string $email): int;
 
     /**
      * Retrieves user data
      *
      * @param string $userName
-     * @return array|false ['user_id' => , 'user_name' => , 'password_hash' => ]
+     * @return array|false ['user_id' => , 'user_name' => , 'password_hash' => , 'email_id' =>, 'email' =>, 'is_verified' =>]
      */
     public function getUserData(string $userName): array|false;
 

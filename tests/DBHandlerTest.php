@@ -14,6 +14,7 @@ class DBHandlerTest extends TestCase
 {
     private static DBHandler $handler;
     private const string USER_NAME = 'MyUserTestName';
+    private const string USER_EMAIL = 'myuser@email.com';
     private const string PASSWORD_HASH = 'MyUserTestPasswordHash';
     private const string CHAT_NAME = 'MyChatTestName';
     private const string COOKIE = 'MyTestCookie123';
@@ -43,10 +44,11 @@ class DBHandlerTest extends TestCase
      */
     public function testUserStoring(): array
     {
-        $userId = self::$handler->newUser(self::USER_NAME, self::PASSWORD_HASH);
+        $userId = self::$handler->newUser(self::USER_NAME, self::PASSWORD_HASH, self::USER_EMAIL);
         $userData = self::$handler->getUserData(self::USER_NAME);
         $this->assertSame(self::USER_NAME, $userData['user_name']);
         $this->assertSame(self::PASSWORD_HASH, $userData['password_hash']);
+        $this->assertSame(self::USER_EMAIL, $userData['email']);
         $this->assertSame($userId, $userData['user_id']);
         return ['userId' => $userId];
     }
@@ -55,7 +57,7 @@ class DBHandlerTest extends TestCase
     public function testNameExists(): void
     {
         $this->expectException(NameExistsException::class);
-        self::$handler->newUser(self::USER_NAME, self::PASSWORD_HASH);
+        self::$handler->newUser(self::USER_NAME, self::PASSWORD_HASH, self::USER_EMAIL);
     }
 
     #[Depends('testUserStoring')]

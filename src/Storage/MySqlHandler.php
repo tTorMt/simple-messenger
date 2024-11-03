@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tTorMt\SChat\Storage;
 
+use Exception;
 use mysqli;
 use mysqli_sql_exception;
 use tTorMt\SChat\Messenger\NameExistsException;
@@ -21,9 +22,10 @@ class MySqlHandler implements DBHandler
      * Array of queries for methods
      */
     private const array QUERIES = [
-        'writeNewUser' => 'INSERT INTO user (user_name, password_hash) VALUES (?, ?)',
-        'getUserData' => 'SELECT user_id, user_name, password_hash FROM user WHERE user_name = ?',
-        'deleteUser' => 'DELETE FROM user WHERE user_id = ?',
+        'writeNewEmail' => 'INSERT INTO email (email) VALUES (?)',
+        'writeNewUser' => 'INSERT INTO user (user_name, password_hash, email_id) SELECT ?, ?, email_id FROM email WHERE email.email = ?',
+        'getUserData' => 'SELECT user_id, user_name, password_hash, email_id, email, is_verified FROM user JOIN email USING (email_id) WHERE user_name = ?',
+        'deleteUser' => 'DELETE email, user FROM user JOIN email USING (email_id) WHERE user_id = ?',
         'newChat' => 'INSERT INTO chat (chat_name, chat_type) VALUES (?, ?)',
         'getChatId' => 'SELECT chat_id FROM chat WHERE chat_name = ?',
         'deleteChat' => 'DELETE FROM chat WHERE chat_id = ?',
@@ -70,21 +72,43 @@ class MySqlHandler implements DBHandler
      *
      * @param string $userName
      * @param string $passwordHash
+     * @param string $email
      * @return int - new user id
      * @throws NameExistsException
+     * @throws Exception
      */
-    public function newUser(string $userName, string $passwordHash): int
+    public function newUser(string $userName, string $passwordHash, string $email): int
     {
         try {
-            $statement = $this->dataBase->prepare(self::QUERIES['writeNewUser']);
-            $statement->bind_param('ss', $userName, $passwordHash);
+            $this->dataBase->begin_transaction();
+
+            $statement = $this->dataBase->prepare(self::QUERIES['writeNewEmail']);
+            $statement->bind_param('s', $email);
             $statement->execute();
-            $statement->close();
+            if ($statement->affected_rows === 0) {
+                $this->dataBase->rollback();
+                throw new Exception('Email is not inserted');
+            }
+
+            $statement = $this->dataBase->prepare(self::QUERIES['writeNewUser']);
+            $statement->bind_param('sss', $userName, $passwordHash, $email);
+            $statement->execute();
+            if ($statement->affected_rows === 0) {
+                $this->dataBase->rollback();
+                $statement->close();
+                throw new Exception('New user is not inserted');
+            }
+
             $statement = $this->dataBase->prepare(self::QUERIES['getUserData']);
             $statement->bind_param('s', $userName);
             $statement->execute();
             $result = $statement->get_result();
             $result = $result->fetch_assoc();
+            if (is_null($result)) {
+                $this->dataBase->rollback();
+                throw new Exception('Failed to get user data');
+            }
+            $this->dataBase->commit();
             $statement->close();
         } catch (mysqli_sql_exception $exception) {
             if ($exception->getCode() === 1062) {
@@ -99,7 +123,7 @@ class MySqlHandler implements DBHandler
      * Retrieves user data
      *
      * @param string $userName
-     * @return array|false ['user_id' => , 'user_name' => , 'password_hash' => ]
+     * @return array|false ['user_id' => , 'user_name' => , 'password_hash' => , 'email_id' =>, 'email' =>, 'is_verified' =>]
      */
     public function getUserData(string $userName): array|false
     {
