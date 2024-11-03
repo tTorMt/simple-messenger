@@ -49,6 +49,38 @@ CREATE TABLE `chat_user` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `email`
+--
+
+DROP TABLE IF EXISTS `email`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `email` (
+  `email_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `email` varchar(50) NOT NULL,
+  `is_verified` tinyint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`email_id`),
+  UNIQUE KEY `email_idx` (`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `email_ver_tokens`
+--
+
+DROP TABLE IF EXISTS `email_ver_tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `email_ver_tokens` (
+  `email_id` int unsigned NOT NULL,
+  `token` char(32) NOT NULL,
+  PRIMARY KEY (`email_id`),
+  UNIQUE KEY `token_idx` (`token`),
+  CONSTRAINT `email_ver_tokens_ibfk_1` FOREIGN KEY (`email_id`) REFERENCES `email` (`email_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `message`
 --
 
@@ -67,6 +99,22 @@ CREATE TABLE `message` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `message_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
   CONSTRAINT `message_ibfk_2` FOREIGN KEY (`chat_id`) REFERENCES `chat` (`chat_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `pass_cha_tokens`
+--
+
+DROP TABLE IF EXISTS `pass_cha_tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pass_cha_tokens` (
+  `user_id` int unsigned NOT NULL,
+  `token` char(32) NOT NULL,
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `token_idx` (`token`),
+  CONSTRAINT `pass_cha_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -101,8 +149,11 @@ CREATE TABLE `user` (
   `user_id` int unsigned NOT NULL AUTO_INCREMENT,
   `user_name` varchar(30) NOT NULL,
   `password_hash` varchar(255) DEFAULT NULL,
+  `email_id` int unsigned NOT NULL,
   PRIMARY KEY (`user_id`),
-  UNIQUE KEY `user_name` (`user_name`)
+  UNIQUE KEY `user_name` (`user_name`),
+  KEY `email_id` (`email_id`),
+  CONSTRAINT `user_ibfk_1` FOREIGN KEY (`email_id`) REFERENCES `email` (`email_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
