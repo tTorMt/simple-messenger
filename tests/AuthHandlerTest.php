@@ -12,8 +12,10 @@ class AuthHandlerTest extends TestCase
 {
     private static AuthHandler $handler;
     private const string USER_NAME = 'newUser';
+    private const string USER_EMAIL = 'foo@bar.com';
     private const string PASSWORD = 'newPassword!1';
     private const string INCORRECT_USERNAME = '123@@@hello world';
+    private const string INCORRECT_EMAIL = 'not_an_email';
     private const string INCORRECT_PASSWORD = 'Test';
     private const string INCORRECT_PASSWORD2 = 'TestPass1!';
 
@@ -26,10 +28,11 @@ class AuthHandlerTest extends TestCase
 
     public function testNewUser(): void
     {
-        $this->assertSame(self::$handler->newUserAccount(self::INCORRECT_USERNAME, self::PASSWORD), AuthHandler::NAME_ERROR);
-        $this->assertSame(self::$handler->newUserAccount(self::USER_NAME, self::INCORRECT_PASSWORD), AuthHandler::PASSWORD_ERROR);
-        $this->assertTrue(self::$handler->newUserAccount(self::USER_NAME, self::PASSWORD));
-        $this->assertSame(self::$handler->newUserAccount(self::USER_NAME, self::PASSWORD), AuthHandler::NAME_EXISTS);
+        $this->assertSame(self::$handler->newUserAccount(self::INCORRECT_USERNAME, self::PASSWORD, self::USER_EMAIL), AuthHandler::NAME_ERROR);
+        $this->assertSame(self::$handler->newUserAccount(self::USER_NAME, self::INCORRECT_PASSWORD, self::USER_EMAIL), AuthHandler::PASSWORD_ERROR);
+        $this->assertSame(self::$handler->newUserAccount(self::USER_NAME, self::PASSWORD, self::INCORRECT_EMAIL), AuthHandler::EMAIL_ERROR);
+        $this->assertTrue(self::$handler->newUserAccount(self::USER_NAME, self::PASSWORD, self::USER_EMAIL));
+        $this->assertSame(self::$handler->newUserAccount(self::USER_NAME, self::PASSWORD, self::USER_EMAIL), AuthHandler::NAME_EXISTS);
     }
 
     public function testAuthenticatedUser(): void
@@ -38,6 +41,8 @@ class AuthHandlerTest extends TestCase
         $this->assertFalse(self::$handler->authenticate(self::USER_NAME, self::INCORRECT_PASSWORD));
         $this->assertFalse(self::$handler->authenticate(self::USER_NAME, self::INCORRECT_PASSWORD2));
         $this->assertTrue(self::$handler->authenticate(self::USER_NAME, self::PASSWORD));
+        $this->assertSame(self::USER_NAME, $_SESSION['userName']);
+        $this->assertTrue(self::$handler->authenticate(self::USER_EMAIL, self::PASSWORD));
         $this->assertSame(self::USER_NAME, $_SESSION['userName']);
     }
 

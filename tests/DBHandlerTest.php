@@ -161,6 +161,7 @@ class DBHandlerTest extends TestCase
     public function testUserDeleting(array $testData): void
     {
         $this->assertTrue(self::$handler->deleteUser($testData['userId']));
+        $this->assertFalse(self::$handler->getUserData(self::USER_NAME));
     }
 
     #[Depends('testChats')]

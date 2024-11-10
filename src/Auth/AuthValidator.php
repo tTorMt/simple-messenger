@@ -54,6 +54,17 @@ class AuthValidator
     }
 
     /**
+     * Validates email
+     *
+     * @param string $email
+     * @return bool
+     */
+    public static function validateEmail(string $email): bool
+    {
+        return (bool)filter_var($email, FILTER_VALIDATE_EMAIL);
+    }
+
+    /**
      * Trims and normalizes spaces in the username.
      *
      * @param string $name

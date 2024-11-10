@@ -92,6 +92,12 @@ class AuthValidatorTest extends TestCase
         $this->assertFalse($this->authValidator->passCheck($password));
     }
 
+    public function testEmailCheck(): void
+    {
+        $this->assertTrue($this->authValidator->validateEmail('foo@bar.com'));
+        $this->assertFalse($this->authValidator->validateEmail('foobar'));
+    }
+
     public function testTrim(): void
     {
         $trimmedName = $this->authValidator->nameTrim("         Test_Name       \n   \t  \r");

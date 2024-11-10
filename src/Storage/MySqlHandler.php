@@ -24,7 +24,7 @@ class MySqlHandler implements DBHandler
     private const array QUERIES = [
         'writeNewEmail' => 'INSERT INTO email (email) VALUES (?)',
         'writeNewUser' => 'INSERT INTO user (user_name, password_hash, email_id) SELECT ?, ?, email_id FROM email WHERE email.email = ?',
-        'getUserData' => 'SELECT user_id, user_name, password_hash, email_id, email, is_verified FROM user JOIN email USING (email_id) WHERE user_name = ?',
+        'getUserData' => 'SELECT user_id, user_name, password_hash, email_id, email, is_verified FROM user JOIN email USING (email_id) WHERE user_name = ? OR email = ?',
         'deleteUser' => 'DELETE email, user FROM user JOIN email USING (email_id) WHERE user_id = ?',
         'newChat' => 'INSERT INTO chat (chat_name, chat_type) VALUES (?, ?)',
         'getChatId' => 'SELECT chat_id FROM chat WHERE chat_name = ?',
@@ -100,7 +100,7 @@ class MySqlHandler implements DBHandler
             }
 
             $statement = $this->dataBase->prepare(self::QUERIES['getUserData']);
-            $statement->bind_param('s', $userName);
+            $statement->bind_param('ss', $userName, $userName);
             $statement->execute();
             $result = $statement->get_result();
             $result = $result->fetch_assoc();
@@ -111,6 +111,7 @@ class MySqlHandler implements DBHandler
             $this->dataBase->commit();
             $statement->close();
         } catch (mysqli_sql_exception $exception) {
+            $this->dataBase->rollback();
             if ($exception->getCode() === 1062) {
                 throw new NameExistsException();
             }
@@ -128,7 +129,7 @@ class MySqlHandler implements DBHandler
     public function getUserData(string $userName): array|false
     {
         $statement = $this->dataBase->prepare(self::QUERIES['getUserData']);
-        $statement->bind_param('s', $userName);
+        $statement->bind_param('ss', $userName, $userName);
         $statement->execute();
         $result = $statement->get_result();
         $result = $result->fetch_assoc();
