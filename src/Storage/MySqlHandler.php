@@ -24,6 +24,13 @@ class MySqlHandler implements DBHandler
     private const array QUERIES = [
         'writeNewEmail' => 'INSERT INTO email (email) VALUES (?)',
         'writeNewUser' => 'INSERT INTO user (user_name, password_hash, email_id) SELECT ?, ?, email_id FROM email WHERE email.email = ?',
+        'addEmailVerificationToken' => 'INSERT INTO email_ver_tokens(email_id, token) SELECT email_id, ? FROM email WHERE email = ? ON DUPLICATE KEY UPDATE token = ?',
+        'userVerification' => 'UPDATE email SET is_verified = 1 WHERE email_id = (SELECT email_id FROM email_ver_tokens WHERE token = ?)',
+        'emailVerificationCheck' => 'SELECT is_verified FROM email WHERE email = ?',
+        'emailTokenVerification' => 'SELECT is_verified FROM email JOIN email_ver_tokens USING (email_id) WHERE token = ?',
+        'deleteEmailToken' => 'DELETE FROM email_ver_tokens WHERE token  = ?',
+        'clearEmailTokens' => 'DELETE FROM email_ver_tokens WHERE email_id = (SELECT email_id FROM email JOIN user USING(email_id) WHERE email = ? OR user_name = ? OR user_id = ?)',
+        'clearPasswordTokens' => 'DELETE FROM pass_cha_tokens WHERE user_id = (SELECT user_id FROM email JOIN user USING(email_id) WHERE email = ? OR user_name = ?) OR user_id = ?',
         'getUserData' => 'SELECT user_id, user_name, password_hash, email_id, email, is_verified FROM user JOIN email USING (email_id) WHERE user_name = ? OR email = ?',
         'deleteUser' => 'DELETE email, user FROM user JOIN email USING (email_id) WHERE user_id = ?',
         'newChat' => 'INSERT INTO chat (chat_name, chat_type) VALUES (?, ?)',
@@ -121,6 +128,79 @@ class MySqlHandler implements DBHandler
     }
 
     /**
+     * Adds an email verification token row
+     *
+     * @param string $email
+     * @param string $token
+     * @return bool
+     * @throws Exception
+     */
+    public function addEmailVerificationToken(string $email, string $token): bool
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['addEmailVerificationToken']);
+        $statement->bind_param('sss', $token, $email, $token);
+        $statement->execute();
+        return $statement->affected_rows > 0;
+    }
+
+    /**
+     * Verification of the user email.
+     *
+     * @param string $token
+     * @return bool
+     */
+    public function emailTokenVerification(string $token): bool
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['emailTokenVerification']);
+        $statement->bind_param('s', $token);
+        $statement->execute();
+        $result = $statement->get_result()->fetch_assoc();
+        if (empty($result)) {
+            return false;
+        }
+        if ($result['is_verified']) {
+            return true;
+        }
+        $statement = $this->dataBase->prepare(self::QUERIES['userVerification']);
+        $statement->bind_param('s', $token);
+        $statement->execute();
+        return $statement->affected_rows > 0;
+    }
+
+    /**
+     * Removes an email token
+     *
+     * @param string $token
+     * @return bool
+     */
+    public function deleteEmailToken(string $token): bool
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['deleteEmailToken']);
+        $statement->bind_param('s', $token);
+        $statement->execute();
+        return $statement->affected_rows > 0;
+    }
+
+    /**
+     * Removes email verification and change password tokens
+     *
+     * @param string $user - username, email or userID
+     * @return void
+     */
+    public function clearTokens(string $user): void
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['clearEmailTokens']);
+        $userID = is_numeric($user) ? (int)$user : -1;
+        $statement->bind_param('ssi', $user, $user, $userID);
+        $statement->execute();
+        $statement->close();
+        $statement = $this->dataBase->prepare(self::QUERIES['clearPasswordTokens']);
+        $statement->bind_param('ssi', $user, $user, $userID);
+        $statement->execute();
+        $statement->close();
+    }
+
+    /**
      * Retrieves user data
      *
      * @param string $userName
@@ -145,6 +225,7 @@ class MySqlHandler implements DBHandler
      */
     public function deleteUser(int $userId): bool
     {
+        $this->clearTokens((string)$userId);
         $statement = $this->dataBase->prepare(self::QUERIES['deleteUser']);
         $statement->bind_param('i', $userId);
         $statement->execute();

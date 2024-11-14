@@ -21,6 +21,7 @@ class DBHandlerTest extends TestCase
     private const string MESSAGE_ONE = 'MyTestMessage1';
     private const string MESSAGE_TWO = 'MyTestMessage2';
     private const string PATH_TO_FILE = '/path/to/file';
+    private const string EMAIL_TOKEN = 'email_token_32_chars____________';
 
     public static function setUpBeforeClass(): void
     {
@@ -58,6 +59,35 @@ class DBHandlerTest extends TestCase
     {
         $this->expectException(NameExistsException::class);
         self::$handler->newUser(self::USER_NAME, self::PASSWORD_HASH, self::USER_EMAIL);
+    }
+
+    /**
+     * @throws \Exception
+     */
+    #[Depends('testUserStoring')]
+    public function testEmailTokenAdd(array $testData): array
+    {
+        $this->assertFalse(self::$handler->addEmailVerificationToken('email_doesnt_exists', self::EMAIL_TOKEN));
+        $this->assertTrue(self::$handler->addEmailVerificationToken(self::USER_EMAIL, self::EMAIL_TOKEN));
+        return $testData;
+    }
+
+    #[Depends('testEmailTokenAdd')]
+    public function testEmailVerification(array $testData): array
+    {
+        $this->assertFalse(self::$handler->emailTokenVerification('token_doesnt_exists'));
+        $this->assertTrue(self::$handler->emailTokenVerification(self::EMAIL_TOKEN));
+        $this->assertTrue(self::$handler->emailTokenVerification(self::EMAIL_TOKEN));
+        return $testData;
+    }
+
+    #[Depends('testEmailVerification')]
+    public function testEmailTokenDelete(array $testData): array
+    {
+        $this->assertFalse(self::$handler->deleteEmailToken('token_doesnt_exists'));
+        $this->assertTrue(self::$handler->deleteEmailToken(self::EMAIL_TOKEN));
+        $this->assertFalse(self::$handler->deleteEmailToken(self::EMAIL_TOKEN));
+        return $testData;
     }
 
     #[Depends('testUserStoring')]
@@ -157,9 +187,13 @@ class DBHandlerTest extends TestCase
         $this->assertTrue(self::$handler->deleteUserFromChat($testData['userId'], $testData['chatId']));
     }
 
+    /**
+     * @throws \Exception
+     */
     #[Depends('testUserStoring')]
     public function testUserDeleting(array $testData): void
     {
+        self::$handler->addEmailVerificationToken(self::USER_EMAIL, self::EMAIL_TOKEN);
         $this->assertTrue(self::$handler->deleteUser($testData['userId']));
         $this->assertFalse(self::$handler->getUserData(self::USER_NAME));
     }

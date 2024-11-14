@@ -8,6 +8,7 @@ use finfo;
 use Psr\Log\LoggerInterface;
 use tTorMt\SChat\Auth\AuthHandler;
 use tTorMt\SChat\Auth\AuthValidator;
+use tTorMt\SChat\Auth\MailHandler;
 use tTorMt\SChat\Logger\DefaultLogger;
 use tTorMt\SChat\Messenger\ChatManager;
 use tTorMt\SChat\Messenger\ChatStoreException;
@@ -148,16 +149,36 @@ class App
      */
     public function newUser(): void
     {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['userName']) && isset($_POST['userPassword'])) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST'
+            && isset($_POST['userName'])
+            && isset($_POST['userPassword'])
+            && isset($_POST['userEmail'])
+        ) {
             $authHandler = new AuthHandler($this->DBHandler);
             try {
-                $result = $authHandler->newUserAccount($_POST['userName'], $_POST['userPassword']);
+                $result = $authHandler->newUserAccount($_POST['userName'], $_POST['userPassword'], $_POST['userEmail']);
             } catch (\Exception $exception) {
                 $this->logger->error($exception);
                 http_response_code(500);
                 return;
             }
             if ($result === true) {
+                try {
+                    $emailToken = bin2hex(random_bytes(16));
+                    $result = $this->DBHandler->addEmailVerificationToken($_POST['userEmail'], $emailToken);
+                    if ($result === false) {
+                        throw new \Exception("Failed to add email token");
+                    }
+                    $emailHandler = new MailHandler($_POST['userEmail']);
+                    if (!$emailHandler->sendVerificationLink($emailToken)) {
+                        throw new \Exception("Failed to send verification link");
+                    }
+                } catch (\Exception $exception) {
+                    $this->logger->error($exception);
+                    $this->DBHandler->deleteUser(($this->DBHandler->getUserData($_POST['userName']))['user_id']);
+                    http_response_code(500);
+                    return;
+                }
                 http_response_code(200);
                 return;
             }
@@ -165,7 +186,9 @@ class App
             $errorMessage = match ($result) {
                 AuthHandler::NAME_ERROR => 'NameError',
                 AuthHandler::PASSWORD_ERROR => 'PasswordError',
-                AuthHandler::NAME_EXISTS => 'NameExists'
+                AuthHandler::NAME_EXISTS => 'NameExists',
+                AuthHandler::EMAIL_ERROR => 'EmailError',
+                default => 'UnknownError',
             };
             echo json_encode(['Error' => $errorMessage]);
             return;

@@ -27,6 +27,39 @@ interface DBHandler
     public function newUser(string $userName, string $passwordHash, string $email): int;
 
     /**
+     * Adds an email verification token row
+     *
+     * @param string $email
+     * @param string $token
+     * @return bool
+     */
+    public function addEmailVerificationToken(string $email, string $token): bool;
+
+    /**
+     * Verification of the user email.
+     *
+     * @param string $token
+     * @return bool
+     */
+    public function emailTokenVerification(string $token): bool;
+
+    /**
+     * Removes an email token
+     *
+     * @param string $token
+     * @return bool
+     */
+    public function deleteEmailToken(string $token): bool;
+
+    /**
+     * Removes email verification and change password tokens
+     *
+     * @param string $user - username, email or userID
+     * @return void
+     */
+    public function clearTokens(string $user): void;
+
+    /**
      * Retrieves user data
      *
      * @param string $userName

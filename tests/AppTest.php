@@ -26,7 +26,9 @@ class AppTest extends TestCase
     private const string CHAT_NAME = 'testChatName';
     private const string USER_PASS = 'TestPass12!!';
     private const string USER_NAME_ONE = 'TestNameOne';
+    private const string USER_EMAIL_ONE = 'user_one@email.com';
     private const string USER_NAME_TWO = 'TestNameTwo';
+    private const string USER_EMAIL_TWO = 'user_two@email.com';
 
     public static function setUpBeforeClass(): void
     {
@@ -90,6 +92,7 @@ class AppTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST['userName'] = self::USER_NAME_ONE;
         $_POST['userPassword'] = self::USER_PASS;
+        $_POST['userEmail'] = self::USER_EMAIL_ONE;
         self::$app->newUser();
         $userId = self::$handler->getUserData(self::USER_NAME_ONE);
         $this->assertNotFalse($userId);
@@ -97,6 +100,7 @@ class AppTest extends TestCase
         $this->assertSame(200, http_response_code());
 
         $_POST['userName'] = self::USER_NAME_TWO;
+        $_POST['userEmail'] = self::USER_EMAIL_TWO;
         self::$app->newUser();
         $userId = self::$handler->getUserData(self::USER_NAME_TWO);
         $this->assertNotFalse($userId);
@@ -104,7 +108,16 @@ class AppTest extends TestCase
         $this->assertSame(200, http_response_code());
 
         $DBStub = $this->createStub(DBHandler::class);
-        $DBStub->method('newUser')->willThrowException(new \PHPUnit\Framework\Exception());
+        $DBStub->method('newUser')->willThrowException(new \Exception());
+        $app = new App($DBStub);
+        $app->setLogger($this->createStub(LoggerInterface::class));
+        $app->newUser();
+        $this->assertSame(500, http_response_code());
+
+        $DBStub = $this->createStub(DBHandler::class);
+        $DBStub->method('newUser')->willReturn(-1);
+        $DBStub->method('addEmailVerificationToken')->willReturn(false);
+        $DBStub->method('getUserData')->willReturn(['user_id' => -1]);
         $app = new App($DBStub);
         $app->setLogger($this->createStub(LoggerInterface::class));
         $app->newUser();
@@ -173,6 +186,20 @@ class AppTest extends TestCase
         $_POST['userPassword'] = self::USER_PASS;
         self::$app->newUser();
         $this->expectOutputString('{"Error":"NameExists"}');
+        $this->assertSame(400, http_response_code());
+    }
+
+    #[Depends('testNewUser')]
+    public function testNewUserEmailError(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST['userName'] = 'CorrectName';
+        $_POST['userPassword'] = self::USER_PASS;
+        $_POST['userEmail'] = 'notAnEmail';
+        self::$app->newUser();
+        $this->expectOutputString('{"Error":"EmailError"}');
+        $userId = self::$handler->getUserData($_POST['userName']);
+        $this->assertFalse($userId);
         $this->assertSame(400, http_response_code());
     }
 
