@@ -127,6 +127,27 @@ class AppTest extends TestCase
     /**
      * @throws Exception
      */
+    public function testEmailVerification(): void
+    {
+        unset($_GET['token']);
+        self::$app->emailVerification();
+        $this->assertSame(400, http_response_code());
+
+        $_GET['token'] = 'token does not exist';
+        self::$app->emailVerification();
+        $this->assertSame(404, http_response_code());
+
+        $DBStub = $this->createStub(DBHandler::class);
+        $DBStub->method('emailTokenVerification')->willReturn(true);
+        $app = new App($DBStub);
+        $app->setLogger($this->createStub(LoggerInterface::class));
+        $app->emailVerification();
+        $this->assertSame(200, http_response_code());
+    }
+
+    /**
+     * @throws Exception
+     */
     #[Depends('testNewUser')]
     public function testAuth(): void
     {

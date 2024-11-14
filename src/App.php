@@ -197,6 +197,26 @@ class App
     }
 
     /**
+     * API method to verify a user's email
+     *
+     * @return void
+     */
+    public function emailVerification(): void
+    {
+        if (!isset($_GET['token'])) {
+            http_response_code(400);
+            return;
+        }
+        $token = $_GET['token'];
+        $result = $this->DBHandler->emailTokenVerification($token);
+        if ($result) {
+            http_response_code(200);
+            return;
+        }
+        http_response_code(404);
+    }
+
+    /**
      * API method to create a new chat
      *
      * @return void
