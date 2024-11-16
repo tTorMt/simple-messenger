@@ -65,7 +65,7 @@ class AuthHandler
         }
 
         $userData = $this->storage->getUserData($userName);
-        if (!empty($userData) && password_verify($password, $userData['password_hash'])) {
+        if (!empty($userData) && password_verify($password, $userData['password_hash']) && $userData['is_verified'] == 1) {
             $this->storage->storeSession($userData['user_id'], session_id());
             $_SESSION['userId'] = $userData['user_id'];
             $_SESSION['userName'] = $userData['user_name'];
