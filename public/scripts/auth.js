@@ -7,7 +7,9 @@ authUserInit();
 function signTypeToggle() {
     let signBtn = document.getElementById('sign');
     let retypeInput = document.getElementById('password-retype');
-    let retypeLabel = document.querySelector('label[for="password-retype"]')
+    let retypeLabel = document.querySelector('label[for="password-retype"]');
+    let emailInput = document.getElementById('userEmail');
+    let emailLabel = document.querySelector('label[for="userEmail"]');
     let signTypeHeader = document.querySelector('#app main h1');
     let sendBtn = document.getElementById('auth');
     let rules = document.getElementById('rules');
@@ -15,6 +17,9 @@ function signTypeToggle() {
     signBtn.addEventListener('click', (event) => {
         event.preventDefault();
         errorFieldToggle();
+        emailInput.toggleAttribute('hidden');
+        emailLabel.toggleAttribute('hidden');
+        emailInput.toggleAttribute('required');
         retypeInput.toggleAttribute('hidden');
         retypeInput.toggleAttribute('required');
         retypeLabel.toggleAttribute('hidden');
@@ -44,6 +49,7 @@ function authUserInit() {
         errorFieldToggle();
         let userName = document.getElementById('userName').value;
         let password = document.getElementById('userPassword').value;
+        let email = document.getElementById('userEmail').value;
         let retype = document.getElementById('password-retype').value;
         let authType = document.querySelector('#app main h1').textContent;
         if (authType === 'Sign In') {
@@ -67,7 +73,7 @@ function authUserInit() {
             authBtn.removeAttribute('disabled');
             return;
         }
-        register(userName, password).then(result => {
+        register(userName, password, email).then(result => {
             if (Object.hasOwn(result, 'Error')) {
                 errorFieldToggle(result.Error);
                 authBtn.removeAttribute('disabled');

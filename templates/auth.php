@@ -21,6 +21,8 @@
         <form>
             <label for="userName">User name</label>
             <input type="text" id="userName" name="userName" required>
+            <label for="userEmail" hidden>Email</label>
+            <input type="text" id="userEmail" name="userEmail" hidden>
             <label for="userPassword">Password</label>
             <input type="password" id="userPassword" name="userPassword" required>
             <label for="password-retype" hidden>Retype password</label>

@@ -20,13 +20,15 @@ async function authorize(user, password) {
  * Registers a new user.
  * @param user
  * @param password
+ * @param email
  * @returns {Promise<{}|{ Error: 'error type' }>}
- * Error types: NameError PasswordError NameExists InternalServerError WrongRequest Unknown error. Response code: status code
+ * Error types: NameError PasswordError NameExists EmailError InternalServerError WrongRequest Unknown error. Response code: status code
  */
-async function register(user, password) {
+async function register(user, password, email) {
     let userData = new FormData();
     userData.append('userName', user);
     userData.append('userPassword', password);
+    userData.append('userEmail', email);
     let response = await fetch('/newUser', {
         method: 'POST',
         body: userData
@@ -39,6 +41,89 @@ async function register(user, password) {
                 case 500 : return { Error: 'InternalServerError'};
                 case 400 : return { Error: 'WrongRequest'};
                 default : return { Error: 'Unknown error. Response code: ' + response.status };
+            }
+        }
+    }
+    return {};
+}
+
+/**
+ * Verifies a user's email
+ *
+ * @param token
+ * @returns {Promise<{}|{Error: string}>}
+ * Error types: WrongRequest, WrongToken, UnknownError
+ */
+async function emailVerification(token) {
+    let response = await fetch('/emailVerification?token=' + token);
+    if (!response.ok) {
+        switch (response.status) {
+            case 404 : return { Error: 'WrongRequest' };
+            case 400 : return { Error: 'WrongToken' };
+            default: return { Error: 'UnknownError' };
+        }
+    }
+    return {};
+}
+
+/**
+ * Sends password restoration email
+ *
+ * @param email
+ * @returns {Promise<{}|any|{Error: string}>}
+ * Error types: NoSuchEmail, InternalServerError, UnknownError
+ */
+async function forgotPassword(email) {
+    let formData = new FormData();
+    formData.append('email', email);
+    let response = await fetch('/forgotPassword', {
+        method: 'POST',
+        body: formData
+    });
+    if (!response.ok) {
+        try {
+            return await response.json();
+        } catch (exception) {
+            switch (response.status) {
+                case 500 : return { Error: 'InternalServerError'};
+                default : return { Error: 'UnknownError'};
+            }
+        }
+    }
+    return {};
+}
+
+/**
+ * Changes the user's password using either a password token or the old password.
+ *
+ * @param newPassword
+ * @param oldPassword
+ * @param token
+ * @returns {Promise<{}|any|{Error: string}>}
+ * Error types: PasswordError, WrongToken, WrongUserData, InternalServerError, UnknownError
+ */
+async function changePassword(newPassword, oldPassword, token) {
+    let passwordData = new FormData();
+    passwordData.append('newPassword', newPassword);
+    if (token !== undefined) {
+        passwordData.append('token', token);
+    }
+    if (oldPassword !== undefined) {
+        passwordData.append('oldPassword', oldPassword);
+    }
+    let response = await fetch('/changePassword', {
+        method: 'POST',
+        body: passwordData
+    });
+
+    if (!response.ok) {
+        try {
+            return await response.json();
+        } catch (exception) {
+            switch (response.status) {
+                case 401 : return { Error: 'WrongUserData' };
+                case 500 : return { Error: 'InternalServerError' };
+                default : return { Error: 'UnknownError' };
             }
         }
     }
