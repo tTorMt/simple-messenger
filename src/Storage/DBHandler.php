@@ -52,6 +52,41 @@ interface DBHandler
     public function deleteEmailToken(string $token): bool;
 
     /**
+     * Changes the user's password using a token.
+     *
+     * @param string $token
+     * @param string $newPasswordHash
+     * @return bool
+     */
+    public function changePasswordByToken(string $token, string $newPasswordHash): bool;
+
+    /**
+     * Generates a new password change token and stores it in the database.
+     *
+     * @param string $email
+     * @param string $token
+     * @return bool
+     */
+    public function addPasswordToken(string $email, string $token): bool;
+
+    /**
+     * Removes a password token
+     *
+     * @param string $token
+     * @return bool
+     */
+    public function deletePasswordToken(string $token): bool;
+
+    /**
+     * Changes the user's password using a session ID.
+     *
+     * @param string $sessionId
+     * @param string $newPasswordHash
+     * @return bool
+     */
+    public function changePassword(string $sessionId, string $newPasswordHash): bool;
+
+    /**
      * Removes email verification and change password tokens
      *
      * @param string $user - username, email or userID

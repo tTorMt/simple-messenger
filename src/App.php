@@ -217,6 +217,88 @@ class App
     }
 
     /**
+     * API method to change the password
+     *
+     * @return void
+     */
+    public function changePassword(): void
+    {
+        try {
+            if (isset($_POST['token']) && isset($_POST['newPassword'])) {
+                if (!AuthValidator::passCheck($_POST['newPassword'])) {
+                    http_response_code(400);
+                    echo json_encode(['Error' => 'PasswordError']);
+                    return;
+                }
+                if (!$this->DBHandler->changePasswordByToken($_POST['token'], password_hash($_POST['newPassword'], PASSWORD_DEFAULT))) {
+                    http_response_code(401);
+                    echo json_encode(['Error' => 'WrongToken']);
+                    return;
+                }
+                http_response_code(200);
+                $this->DBHandler->deletePasswordToken($_POST['token']);
+                return;
+            }
+            if (isset($_SESSION['userName']) && isset($_POST['oldPassword']) && isset($_POST['newPassword'])) {
+                if (!AuthValidator::passCheck($_POST['newPassword'])) {
+                    http_response_code(400);
+                    echo json_encode(['Error' => 'PasswordError']);
+                    return;
+                }
+                $userData = $this->DBHandler->getUserData($_SESSION['userName']);
+                if ($userData === false || !password_verify($_POST['oldPassword'], $userData['password_hash'])) {
+                    http_response_code(401);
+                    return;
+                }
+                if (!$this->DBHandler->changePassword(session_id(), password_hash($_POST['newPassword'], PASSWORD_DEFAULT))) {
+                    http_response_code(500);
+                    return;
+                }
+                http_response_code(200);
+                return;
+            }
+        } catch (\Exception $exception) {
+            $this->logger->error($exception);
+            http_response_code(500);
+            return;
+        }
+        http_response_code(401);
+    }
+
+    /**
+     * API method to set a password restoration token and send a password restoration link via email.
+     *
+     * @return void
+     */
+    public function forgotPassword(): void
+    {
+        if (!$_POST['email']) {
+            http_response_code(400);
+            return;
+        }
+        try {
+            $token = bin2hex(random_bytes(16));
+            if (!$this->DBHandler->addPasswordToken($_POST['email'], $token)) {
+                http_response_code(401);
+                echo json_encode(['Error' => 'NoSuchEmail']);
+                return;
+            }
+            $emailHandler = new MailHandler($_POST['email']);
+            if (!$emailHandler->sendResetPasswordLink($token)) {
+                http_response_code(500);
+                $this->logger->error(new \Exception('Cannot send an email'));
+                $this->DBHandler->deletePasswordToken($token);
+                return;
+            }
+        } catch (\Exception $exception) {
+            $this->logger->error($exception);
+            http_response_code(500);
+            return;
+        }
+        http_response_code(200);
+    }
+
+    /**
      * API method to create a new chat
      *
      * @return void

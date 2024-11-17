@@ -29,6 +29,10 @@ class MySqlHandler implements DBHandler
         'emailVerificationCheck' => 'SELECT is_verified FROM email WHERE email = ?',
         'emailTokenVerification' => 'SELECT is_verified FROM email JOIN email_ver_tokens USING (email_id) WHERE token = ?',
         'deleteEmailToken' => 'DELETE FROM email_ver_tokens WHERE token  = ?',
+        'addPasswordToken' => 'INSERT INTO pass_cha_tokens(user_id, token) SELECT user_id, ? FROM user JOIN email USING(email_id) WHERE email = ?',
+        'deletePasswordToken' => 'DELETE FROM pass_cha_tokens WHERE token = ?',
+        'changePassword' => 'UPDATE user SET password_hash = ? WHERE user_id = (SELECT user_id FROM session_data WHERE cookie = ?)',
+        'changePasswordByToken' => 'UPDATE user SET password_hash = ? WHERE user_id = (SELECT user_id FROM pass_cha_tokens WHERE token = ?)',
         'clearEmailTokens' => 'DELETE FROM email_ver_tokens WHERE email_id = (SELECT email_id FROM email JOIN user USING(email_id) WHERE email = ? OR user_name = ? OR user_id = ?)',
         'clearPasswordTokens' => 'DELETE FROM pass_cha_tokens WHERE user_id = (SELECT user_id FROM email JOIN user USING(email_id) WHERE email = ? OR user_name = ?) OR user_id = ?',
         'getUserData' => 'SELECT user_id, user_name, password_hash, email_id, email, is_verified FROM user JOIN email USING (email_id) WHERE user_name = ? OR email = ?',
@@ -177,6 +181,65 @@ class MySqlHandler implements DBHandler
     {
         $statement = $this->dataBase->prepare(self::QUERIES['deleteEmailToken']);
         $statement->bind_param('s', $token);
+        $statement->execute();
+        return $statement->affected_rows > 0;
+    }
+
+    /**
+     * Changes the user's password using a token.
+     *
+     * @param string $token
+     * @param string $newPasswordHash
+     * @return bool
+     */
+    public function changePasswordByToken(string $token, string $newPasswordHash): bool
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['changePasswordByToken']);
+        $statement->bind_param('ss', $newPasswordHash, $token);
+        $statement->execute();
+        return $statement->affected_rows > 0;
+    }
+
+    /**
+     * Generates a new password change token and stores it in the database.
+     *
+     * @param string $email
+     * @param string $token
+     * @return bool
+     */
+    public function addPasswordToken(string $email, string $token): bool
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['addPasswordToken']);
+        $statement->bind_param('ss', $token, $email);
+        $statement->execute();
+        return $statement->affected_rows > 0;
+    }
+
+    /**
+     * Removes a password token
+     *
+     * @param string $token
+     * @return bool
+     */
+    public function deletePasswordToken(string $token): bool
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['deletePasswordToken']);
+        $statement->bind_param('s', $token);
+        $statement->execute();
+        return $statement->affected_rows > 0;
+    }
+
+    /**
+     * Changes the user's password using a session ID.
+     *
+     * @param string $sessionId
+     * @param string $newPasswordHash
+     * @return bool
+     */
+    public function changePassword(string $sessionId, string $newPasswordHash): bool
+    {
+        $statement = $this->dataBase->prepare(self::QUERIES['changePassword']);
+        $statement->bind_param('ss', $newPasswordHash, $sessionId);
         $statement->execute();
         return $statement->affected_rows > 0;
     }

@@ -22,6 +22,7 @@ class DBHandlerTest extends TestCase
     private const string MESSAGE_TWO = 'MyTestMessage2';
     private const string PATH_TO_FILE = '/path/to/file';
     private const string EMAIL_TOKEN = 'email_token_32_chars____________';
+    private const string PASS_TOKEN = 'pass_token_32_chars_____________';
 
     public static function setUpBeforeClass(): void
     {
@@ -99,6 +100,38 @@ class DBHandlerTest extends TestCase
         $this->assertNotEmpty($sessionData);
         $this->assertSame($testData['userId'], $sessionData['user_id']);
         return $testData;
+    }
+
+    #[Depends('testUserStoring')]
+    public function testAddPasswordToken(): void
+    {
+        $this->assertFalse(self::$handler->addPasswordToken('no_such_email', self::PASS_TOKEN));
+        $this->assertTrue(self::$handler->addPasswordToken(self::USER_EMAIL, self::PASS_TOKEN));
+    }
+
+    #[Depends('testAddPasswordToken')]
+    public function testChangePassByToken(): void
+    {
+        $this->assertFalse(self::$handler->changePasswordByToken('no_such_token', 'new_pass_hash'));
+        $this->assertTrue(self::$handler->changePasswordByToken(self::PASS_TOKEN, 'new_pass_hash'));
+        $userData = self::$handler->getUserData(self::USER_NAME);
+        $this->assertSame($userData['password_hash'], 'new_pass_hash');
+    }
+
+    #[Depends('testAddPasswordToken')]
+    public function testDeletePassToken(): void
+    {
+        $this->assertFalse(self::$handler->deletePasswordToken('no_such_token'));
+        $this->assertTrue(self::$handler->deletePasswordToken(self::PASS_TOKEN));
+    }
+
+    #[Depends('testSession')]
+    public function testChangePassword(): void
+    {
+        $this->assertFalse(self::$handler->changePassword('no_such_session_id', 'test_pass_hash'));
+        $this->assertTrue(self::$handler->changePassword(self::COOKIE, 'test_pass_hash'));
+        $userData = self::$handler->getUserData(self::USER_NAME);
+        $this->assertSame($userData['password_hash'], 'test_pass_hash');
     }
 
     #[Depends('testSession')]

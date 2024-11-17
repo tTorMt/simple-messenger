@@ -25,10 +25,13 @@ class AppTest extends TestCase
     private const string COOKIE = 'cookie';
     private const string CHAT_NAME = 'testChatName';
     private const string USER_PASS = 'TestPass12!!';
+    private const string USER_PASS_CHANGED = 'TestPass22!!';
     private const string USER_NAME_ONE = 'TestNameOne';
     private const string USER_EMAIL_ONE = 'user_one@email.com';
     private const string USER_NAME_TWO = 'TestNameTwo';
     private const string USER_EMAIL_TWO = 'user_two@email.com';
+    private const string CHANGE_PASS_TOKEN = 'pass_token_32___________________';
+    private const string EMAIL_PASS_TOKEN = 'email_token_32__________________';
 
     public static function setUpBeforeClass(): void
     {
@@ -45,6 +48,7 @@ class AppTest extends TestCase
         $activePath = $storageHandler->getSavePath();
         $pathToRemove = realpath($activePath.'/..');
         $storageHandler->removeDir($pathToRemove);
+        self::$handler->clearTokens(self::USER_NAME_ONE);
         self::$handler->deleteMessagesFromChat(self::$chatID);
         self::$handler->deleteSession(self::$firstUserID);
         self::$handler->deleteUserFromChat(self::$firstUserID, self::$chatID);
@@ -124,9 +128,6 @@ class AppTest extends TestCase
         $this->assertSame(500, http_response_code());
     }
 
-    /**
-     * @throws Exception
-     */
     public function testEmailVerification(): void
     {
         unset($_GET['token']);
@@ -137,18 +138,50 @@ class AppTest extends TestCase
         self::$app->emailVerification();
         $this->assertSame(404, http_response_code());
 
-        $DBStub = $this->createStub(DBHandler::class);
-        $DBStub->method('emailTokenVerification')->willReturn(true);
-        $app = new App($DBStub);
-        $app->setLogger($this->createStub(LoggerInterface::class));
-        $app->emailVerification();
+        self::$handler->addEmailVerificationToken(self::USER_EMAIL_ONE, self::EMAIL_PASS_TOKEN);
+        $_GET['token'] = self::EMAIL_PASS_TOKEN;
+        self::$app->emailVerification();
         $this->assertSame(200, http_response_code());
+    }
+
+    #[Depends('testNewUser')]
+    public function testChangePasswordError(): void
+    {
+        $this->expectOutputString(json_encode(['Error' => 'PasswordError']));
+        $_POST['token'] = self::CHANGE_PASS_TOKEN;
+        $_POST['newPassword'] = 'bad_pass';
+        self::$handler->addPasswordToken(self::USER_EMAIL_ONE, self::CHANGE_PASS_TOKEN);
+        self::$app->changePassword();
+        $this->assertSame(http_response_code(), 400);
+    }
+
+    #[Depends('testNewUser')]
+    public function testChangePassword(): void
+    {
+        unset($_POST['token']);
+        self::$app->changePassword();
+        $this->assertSame(http_response_code(), 401);
+
+        $_POST['token'] = self::CHANGE_PASS_TOKEN;
+        $_POST['newPassword'] = self::USER_PASS_CHANGED;
+        self::$app->changePassword();
+        $this->assertSame(http_response_code(), 200);
+    }
+
+    #[Depends('testChangePassword')]
+    public function testChangePasswordTokenError(): void
+    {
+        $this->expectOutputString(json_encode(['Error' => 'WrongToken']));
+        $_POST['token'] = self::CHANGE_PASS_TOKEN;
+        $_POST['newPassword'] = self::USER_PASS_CHANGED;
+        self::$app->changePassword();
+        $this->assertSame(http_response_code(), 401);
     }
 
     /**
      * @throws Exception
      */
-    #[Depends('testNewUser')]
+    #[Depends('testChangePassword')]
     public function testAuth(): void
     {
         $this->expectOutputString('');
@@ -159,11 +192,11 @@ class AppTest extends TestCase
 
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST['userName'] = self::USER_NAME_ONE;
-        $_POST['userPassword'] = self::USER_PASS.'wrong';
+        $_POST['userPassword'] = self::USER_PASS;
         self::$app->auth();
         $this->assertSame(401, http_response_code());
 
-        $_POST['userPassword'] = self::USER_PASS;
+        $_POST['userPassword'] = self::USER_PASS_CHANGED;
         self::$app->auth();
         $this->assertSame(200, http_response_code());
 
@@ -173,6 +206,43 @@ class AppTest extends TestCase
         $app->setLogger($this->createStub(LoggerInterface::class));
         $app->auth();
         $this->assertSame(500, http_response_code());
+    }
+
+    #[Depends('testAuth')]
+    public function testChangePasswordOldNewError(): void
+    {
+        $this->expectOutputString(json_encode(['Error' => 'PasswordError']));
+        unset($_POST['token']);
+        $_POST['oldPassword'] = self::USER_PASS_CHANGED;
+        $_POST['newPassword'] = 'incorrect_pass';
+        self::$app->changePassword();
+        $this->assertSame(http_response_code(), 400);
+    }
+
+    public function testChangePasswordOldNewNoSession(): void
+    {
+        $sessionID = session_id();
+        session_id('no_id_in_database');
+        unset($_POST['token']);
+        $_POST['oldPassword'] = self::USER_PASS_CHANGED;
+        $_POST['newPassword'] = self::USER_PASS;
+        self::$app->changePassword();
+        $this->assertSame(http_response_code(), 500);
+        session_id($sessionID);
+    }
+
+    #[Depends('testAuth')]
+    public function testChangePasswordOldNew(): void
+    {
+        unset($_POST['token']);
+        $_POST['oldPassword'] = 'wrong_password';
+        $_POST['newPassword'] = self::USER_PASS;
+        self::$app->changePassword();
+        $this->assertSame(http_response_code(), 401);
+
+        $_POST['oldPassword'] = self::USER_PASS_CHANGED;
+        self::$app->changePassword();
+        $this->assertSame(http_response_code(), 200);
     }
 
     public function testNewUserWrongName(): void
@@ -222,6 +292,26 @@ class AppTest extends TestCase
         $userId = self::$handler->getUserData($_POST['userName']);
         $this->assertFalse($userId);
         $this->assertSame(400, http_response_code());
+    }
+
+    #[Depends('testNewUser')]
+    public function testForgotPasswordError(): void
+    {
+        unset($_POST['email']);
+        self::$app->forgotPassword();
+        $this->assertSame(http_response_code(), 400);
+
+        $_POST['email'] = 'email_doesnt_exist';
+        $this->expectOutputString(json_encode(['Error' => 'NoSuchEmail']));
+        self::$app->forgotPassword();
+    }
+
+    #[Depends('testNewUser')]
+    public function testForgotPassword(): void
+    {
+        $_POST['email'] = self::USER_EMAIL_ONE;
+        self::$app->forgotPassword();
+        $this->assertSame(http_response_code(), 200);
     }
 
     /**
