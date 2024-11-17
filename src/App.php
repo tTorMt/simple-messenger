@@ -211,6 +211,7 @@ class App
         $result = $this->DBHandler->emailTokenVerification($token);
         if ($result) {
             http_response_code(200);
+            $this->DBHandler->deleteEmailToken($token);
             return;
         }
         http_response_code(404);
