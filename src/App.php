@@ -61,6 +61,10 @@ class App
             require_once __DIR__.'/../templates/auth.php';
             return;
         }
+        if ($reqPath === 'changePassword' && isset($_GET['changePassToken'])) {
+            require_once __DIR__.'/../templates/changePass.php';
+            return;
+        }
         $this->$reqPath();
     }
 

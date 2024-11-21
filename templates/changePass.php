@@ -7,7 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="/styles/auth.css" rel="stylesheet">
     <script src="/scripts/client.js" async></script>
-    <script src="/scripts/auth.js" defer></script>
+    <script src="/scripts/changePass.js" defer></script>
     <title>Simple messenger</title>
 </head>
 <body>
@@ -16,22 +16,17 @@
 
     </header>
     <main>
-        <h1>Sign In</h1>
+        <h1>Change password</h1>
         <p id="error-field" hidden>Error</p>
         <form>
-            <label for="userName">User name</label>
-            <input type="text" id="userName" name="userName" required>
-            <label for="userEmail" hidden>Email</label>
-            <input type="text" id="userEmail" name="userEmail" hidden>
             <label for="userPassword">Password</label>
             <input type="password" id="userPassword" name="userPassword" required>
-            <label for="password-retype" hidden>Retype password</label>
-            <input type="password" id="password-retype" hidden>
-            <button id="auth">Sign in</button>
-            <a href="" id="sign">Sign up</a>
-            <a href="" id="forgot-password">Forgot password</a>
+            <label for="password-retype" >Retype password</label>
+            <input type="password" id="password-retype" required>
+            <input type="hidden" id="pass-token" value="<?php echo $_GET['changePassToken']; ?>">
+            <button id="auth">Change Password</button>
         </form>
-        <p id="rules" hidden>The username may contain only letters (a-Z), numbers, underscores (_), or apostrophes (').
+        <p id="rules">The username may contain only letters (a-Z), numbers, underscores (_), or apostrophes (').
             The password must contain letters (a-Z), numbers, and special characters (!@$%&_).</p>
     </main>
 </div>

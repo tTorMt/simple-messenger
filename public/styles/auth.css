@@ -36,8 +36,12 @@ html, body, #app {
     justify-content: center;
 }
 
-#error-field {
+.error {
     color: red;
+}
+
+.success {
+    color: green;
 }
 
 #app main form {

@@ -32,6 +32,28 @@ body {
     margin: auto;
 }
 
+#change-pass {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: grey;
+}
+
+#change-pass form {
+    width: 300px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    background-color: lightgray;
+    border: 1px solid black;
+}
+
+#change-pass form * {
+    margin: 5px;
+}
+
 #app {
     background-color: #acacac;
     border: 1px solid black;
@@ -42,11 +64,12 @@ body {
 #app header {
     background-color: white;
     border: 1px solid grey;
+    display: flex;
+    justify-content: space-between;
 }
 
 #app header h4 {
     margin: auto 5px;
-    display: grid;
 }
 
 #chat-list {

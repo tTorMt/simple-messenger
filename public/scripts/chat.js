@@ -1,4 +1,5 @@
 createChatInit();
+changePasswordInit();
 chatListReloadInit();
 addUserToChatInit();
 sendFileInit();
@@ -19,6 +20,62 @@ function setWindowMode() {
     }
     if (!compactMode) {
         showChatList();
+    }
+}
+
+/**
+ * Change password
+ */
+function changePasswordInit() {
+    let passChangeLink = document.getElementById('pass-change-link');
+    let passChangeClose = document.getElementById('change-close');
+    let passChangeWindow = document.getElementById('change-pass');
+    let passChangeStatus = document.getElementById('change-pass-error');
+    let oldPasswordInput = document.getElementById('old-password');
+    let newPasswordInput = document.getElementById('new-password');
+    let retypePasswordInput = document.getElementById('retype');
+    let changeBtn = document.getElementById('change-btn');
+
+    changeBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        toggleChangeStatus();
+        changeBtn.setAttribute('disabled', '');
+        let oldPassword = oldPasswordInput.value;
+        let newPassword = newPasswordInput.value;
+        let retype = retypePasswordInput.value;
+        if (retype === newPassword) {
+            let result = await changePassword(newPassword, oldPassword, undefined);
+            if (Object.hasOwn(result, 'Error')) {
+                toggleChangeStatus('error', result.Error);
+            } else {
+                toggleChangeStatus('success', 'Success');
+            }
+        } else {
+            toggleChangeStatus('error', "Password and retype password do not match.");
+        }
+        changeBtn.removeAttribute('disabled');
+    });
+
+    passChangeClose.addEventListener('click', (event) => {
+        event.preventDefault();
+        passChangeWindow.setAttribute('hidden', '');
+    });
+
+    passChangeLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        passChangeWindow.removeAttribute('hidden');
+    });
+
+    function toggleChangeStatus(type, text) {
+        if (type === undefined || text === undefined) {
+            passChangeStatus.setAttribute('hidden', '');
+            passChangeStatus.classList.remove('error');
+            passChangeStatus.classList.remove('success');
+            return;
+        }
+        passChangeStatus.classList.add(type);
+        passChangeStatus.textContent = text;
+        passChangeStatus.removeAttribute('hidden');
     }
 }
 

@@ -11,9 +11,24 @@
     <title>Simple messenger</title>
 </head>
 <body>
+<div id="change-pass" hidden="">
+    <form>
+        <h1>Change password</h1>
+        <label for="old-password">Old password</label>
+        <input type="password" id="old-password">
+        <label for="new-password">New password</label>
+        <input type="password" id="new-password">
+        <label for="retype">Retype password</label>
+        <input type="password" id="retype">
+        <button id="change-btn">Change</button>
+        <button id="change-close">Close</button>
+        <p id="change-pass-error" hidden=""></p>
+    </form>
+</div>
 <div id="app">
     <header>
         <?php echo "<h4>".$_SESSION['userName']."</h4>" ?>
+        <a href="" id="pass-change-link">Change password</a>
     </header>
     <aside id="chat-list">
         <p id="result-chat-field" hidden>Error field</p>
