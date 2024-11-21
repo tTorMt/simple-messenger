@@ -65,6 +65,11 @@ class App
             require_once __DIR__.'/../templates/changePass.php';
             return;
         }
+
+        if ($reqPath === 'verifyEmail' && isset($_GET['emailVerificationToken'])) {
+            require_once __DIR__.'/../templates/verifyEmail.php';
+            return;
+        }
         $this->$reqPath();
     }
 
