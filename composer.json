@@ -10,7 +10,8 @@
     ],
     "require": {
         "ext-mysqli": "*",
-        "ext-fileinfo": "*"
+        "ext-fileinfo": "*",
+        "phpmailer/phpmailer": "^6.9.2"
     },
     "autoload": {
         "psr-4": {
