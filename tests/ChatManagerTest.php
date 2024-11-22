@@ -25,8 +25,10 @@ class ChatManagerTest extends TestCase
     private static int $chatID;
     private const string MAIN_USER_NAME = 'test_user_1';
     private const string MAIN_USER_SESSION_ID = 'MainUserSessionId';
+    private const string MAIN_USER_EMAIL = 'main@user.com';
     private const string SECOND_USER_NAME = 'test_user_2';
     private const string SECOND_USER_SESSION_ID = 'SecondUserSessionId';
+    private const string SECOND_USER_EMAIL = 'second@user.com';
     private const string PASS_HASH = 'test_user_password';
     private const string CHAT_NAME = 'test_chat';
 
@@ -36,8 +38,8 @@ class ChatManagerTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$storage = new MySqlHandler();
-        self::$mainUserID = self::$storage->newUser(self::MAIN_USER_NAME, self::PASS_HASH);
-        self::$secondUserID = self::$storage->newUser(self::SECOND_USER_NAME, self::PASS_HASH);
+        self::$mainUserID = self::$storage->newUser(self::MAIN_USER_NAME, self::PASS_HASH, self::MAIN_USER_EMAIL);
+        self::$secondUserID = self::$storage->newUser(self::SECOND_USER_NAME, self::PASS_HASH, self::SECOND_USER_EMAIL);
         self::$storage->storeSession(self::$mainUserID, self::MAIN_USER_SESSION_ID);
         self::$storage->storeSession(self::$secondUserID, self::SECOND_USER_SESSION_ID);
     }

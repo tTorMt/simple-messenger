@@ -6,6 +6,7 @@ namespace tTorMt\SChat\Tests;
 
 use PHPUnit\Framework\TestCase;
 use tTorMt\SChat\Auth\AuthHandler;
+use tTorMt\SChat\Storage\MySqlHandler;
 use tTorMt\SChat\Storage\MySqlHandlerGenerator;
 
 class AuthHandlerTest extends TestCase
@@ -35,11 +36,18 @@ class AuthHandlerTest extends TestCase
         $this->assertSame(self::$handler->newUserAccount(self::USER_NAME, self::PASSWORD, self::USER_EMAIL), AuthHandler::NAME_EXISTS);
     }
 
+    /**
+     * @throws \Exception
+     */
     public function testAuthenticatedUser(): void
     {
         $this->assertFalse(self::$handler->authenticate(self::INCORRECT_USERNAME, self::PASSWORD));
         $this->assertFalse(self::$handler->authenticate(self::USER_NAME, self::INCORRECT_PASSWORD));
         $this->assertFalse(self::$handler->authenticate(self::USER_NAME, self::INCORRECT_PASSWORD2));
+        $DBHandler = new MySqlHandler();
+        $emailToken = 'token32_________________________';
+        $DBHandler->addEmailVerificationToken(self::USER_EMAIL, $emailToken);
+        $DBHandler->emailTokenVerification($emailToken);
         $this->assertTrue(self::$handler->authenticate(self::USER_NAME, self::PASSWORD));
         $this->assertSame(self::USER_NAME, $_SESSION['userName']);
         $this->assertTrue(self::$handler->authenticate(self::USER_EMAIL, self::PASSWORD));

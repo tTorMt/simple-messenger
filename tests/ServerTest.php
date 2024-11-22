@@ -24,7 +24,7 @@ class ServerTest extends TestCase
     private static Server $server;
     // Test user data. Insert in user and session_data tables
     private const string TEST_USER_NAME = 'server_test_user';
-
+    private const string TEST_USER_EMAIL = 'user@email.com';
     private const string TEST_USER_COOKIE = 'server_test_user_cookie';
     private static int $testUserId;
     private static int $chatId;
@@ -35,7 +35,7 @@ class ServerTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         $database = new MySqlHandler();
-        self::$testUserId = $database->newUser(self::TEST_USER_NAME, 'pass');
+        self::$testUserId = $database->newUser(self::TEST_USER_NAME, 'pass', self::TEST_USER_EMAIL);
         $database->storeSession(self::$testUserId, self::TEST_USER_COOKIE);
         $database->newChat('TestChat', 0);
         self::$chatId = $database->getChatId('TestChat');
